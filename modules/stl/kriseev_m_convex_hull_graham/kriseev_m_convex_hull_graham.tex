@@ -1,0 +1,1022 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{listings}
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{indentfirst}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{secdot}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage{tocloft}
+\titlelabel{\thetitle. \quad}
+\usepackage{geometry}
+\geometry{left=2.5cm}
+\geometry{right=1.5cm}
+\geometry{top=2cm}
+\geometry{bottom=2cm}
+
+\titlespacing*{\section}{0em}{0ex}{1em}
+
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0, 0.82}
+
+\lstset{
+language=C++,
+aboveskip=3mm,
+xleftmargin=10mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\ttfamily},
+numbers=none,
+numberstyle=\small\color{gray},
+keywordstyle=\color{blue},
+commentstyle=\color{dkgreen},
+stringstyle=\color{mauve},
+breaklines=true,
+breakatwhitespace=true,
+tabsize=3
+}
+
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\begin{document}
+\begin{titlepage}
+ \begin{center}
+{\small МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\\
+ Федеральное государственное автономное образовательное учреждение
+высшего образования
+}
+\textbf{<<Национальный исследовательский
+Нижегородский государственный университет им. Н.И. Лобачевского>>\\
+(ННГУ)\\}
+
+\vspace*{1cm}
+
+\textbf{Институт информационных технологий, математики и механики}
+
+\vspace*{3cm}
+
+\textbf{\LargeОТЧЁТ}
+
+по лабораторной работе
+
+по курсу <<Параллельное программирование для систем с общей памятью>>
+
+\vspace{1em}
+
+\textbf{\large<<Построение выпуклой оболочки -- проход Грэхема>>}
+
+\end{center}
+
+\vspace{2cm}
+
+\begin{flushright}
+\parbox{8.5cm}{
+\textbf{Выполнил:}
+
+студент группы 3821Б1ПР1\\
+Крисеев М.А.
+}
+\end{flushright}
+
+\flushbottom
+
+\vfill
+
+\begin{center}
+ Нижний Новгород
+
+ \the\year
+\end{center}
+
+\end{titlepage}
+
+\tableofcontents
+
+\newpage
+\section*{Введение}
+\label{sec:intro}
+\addcontentsline{toc}{section}{Введение}
+
+В вычислительной геометрии выпуклые фигуры занимают очень важное место. 
+Для нахождения таких фигур из множества точек существует достаточно много алгоритмов
+т.н. <<построения минимальной выпуклой оболочки>>. Такая оболочка является минимально возможной
+выпуклой фигурой (замкнутой кривой), охватывающей все точки множества. Фактически,
+построение такой оболочки сводится к выбору и упорядочению из всего множества точек тех, которые 
+входят в искомую оболочку.
+\newpage
+\section{Ход работы}
+\subsection{Постановка задачи}
+
+Моей задачей является реализация алгоритма построения выпуклой оболочки 
+проходом Грэхема и распараллеливание данного алгоритма при помощи различных технологий:
+
+\begin{itemize}
+    \item OpenMP
+    \item Intel Thread Building Blocks (TBB)
+    \item C++ Standard library
+\end{itemize}
+
+Также мне необходимо сравнить реализации и производительность этих
+версий и проанализировать полученные данные.
+
+\subsection{Описание алгоритма}
+
+На первом шаге алгоритма необходимо найти начальную точку, гарантированно входящую
+в искомую оболочку. Такой точкой является точка с минимальной ординатой.
+
+Далее все остальные точки сортируются по их полярному углу в системе с центром
+в начальной точке. 
+
+После этого необходимо занести начальную точку и первые две точки из отсортированного массива занести в стек, 
+после чего для каждой следующей точки проверяется угол, проходящий через неё, вершину стека и вторую точку сверху стека, и если 
+образуется правый поворот -- вершина удаляется. Как только образуется левый поворот или останется только одна точка в стеке --
+выбранная точка помещается в стек. 
+
+\subsection{Схема распараллеливания}
+
+Поскольку асимптотически наиболее вычислительно сложной операцией является сортировка массива точек,
+а объединение оболочек достаточно сложно, что компенсирует ускорение засчёт параллельного вычисления 
+меньшей оболочки одним потоком и не даёт значительного прироста по сравнению с линейным проходом -- 
+наиболее удобной точкой распараллеливания будет именно сортировка.
+
+Последовательная сортировка std::sort работает очень быстро (позволяя обрабатывать десятки миллионов точек за $\approx 15$ с), 
+а последовательный проход после неё работает ещё в несколько раз быстрее. 
+Распараллелить стандартную сортировку я не могу, поэтому я вынужден писать свой собственный алгоритм сортировки. 
+Я использовал odd-even сортировку.
+
+\subsection{Описание OpenMP версии}
+
+Поскольку сортировка odd-even создана для параллельных вычислений, 
+её параллельная версия на OMP реализуется тривиально добавлением 
+трёх директив.
+
+Перед внешним циклом:
+\begin{lstlisting}
+#pragma omp parallel
+\end{lstlisting}
+
+Перед обоими вложенными циклами:
+
+\begin{lstlisting}
+#pragma omp for
+\end{lstlisting}
+
+\subsection{Описание TBB версии}
+
+Для TBB реализация несколько сложнее, поскольку, в отличие от OMP эта библиотека
+требует реструктуризации кода. 
+
+Для распараллеливания с TBB я заменил внутренние циклы на tbb::parallel\_for.
+В качестве итерационного пространства я использовал стандартный tbb::blocked\_range<size\_t> с 
+grain\_size равным $1/16$ размера массива.
+
+\subsection{Описание версии с std::thread}
+Для использования std::thread понадобилось еще сильнее реструктурировать код. 
+Я вынес код сортировки в отдельную функцию, которая разделяет всё множество точек во внутренних циклах поровну на все потоки.
+
+Чтобы не нарушать четность при распараллеливании, пришлось добавить дополнительные условия в начале 
+функции для каждого потока. 
+
+Внешний цикл также имеется в каждом потоке. При завершении итерации внешнего цикла происходит синхронизация
+при помощи std::barrier.
+
+\subsection{Результаты экспериментов}
+
+Эксперименты я проводил на компьютере с ЦПУ AMD Ryzen 7 5700X (16 доступных потоков). Запуск производился на 
+ОС Arch Linux, ядро Linux Zen 6.9.1, компилятор G++ версии 14.1.1 20240522.
+При тестах на производительность использовались входные данные в виде 5000 точек, сгенерированных 
+генератором псевдослучайных чисел std::mt19937 с сидом 1587443 с равномерным распределением
+на отрезке $[-2.5; 4]$. Сборка CMAKE в конфигурации Release с оптимизацией -O3.
+
+Результаты экспериментов следующие:
+
+
+\begin{center}
+    \begin{tabular}{ |c|c|c|c|c| }
+        \hline
+        Тип запуска & Последовательная & OpenMP & TBB & STL \\
+        \hline
+        Task only & 315.408 мс & 61.330 мс & 218.310 мс & 256.494 мс \\
+        \hline
+        Pipeline & 358.709 мс & 122.241 мс & 235.657 мс & 276.540 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+Корректность эксперимента подтверждается тем, что входные данные у всех методов одинаковы, 
+программы запускаются на одном и том же устройстве с одной и той же конфигурацией оборудования и ОС и одним
+и тем же компилятором. 
+
+Чтобы снизить влияние отклонений в связи с неидеальностью условий проведения -- данные приведены 
+в виде среднего арифметического результатов 10 запусков. 
+
+После каждого запуска также проверяется корректность полученного результата выполнения.
+
+Вычислим полученное ускорение и эффективность по следующим формулам.
+
+Ускорение:
+
+$$p = \frac{T_{seq}}{T_{par}}$$
+где $T_{seq}$ и $T_{par}$ -- времена выполнения последовательной и параллельной версии соответственно.
+
+Эффективность:
+
+$$e = \frac{p}{n}$$
+где $p$ -- ускорение, $n$ -- число потоков, в моём случае $n = 16$.
+
+Получаем следующие результаты:
+
+\smallskip
+Task only:
+
+\begin{center}
+    \begin{tabular}{ |c|c|c| }
+        \hline
+        Версия & Ускорение & Эффективность \\
+        \hline
+        Последовательная & 1 & 0.0625 \\
+        OpenMP & 5.143 & 0.321 \\
+        TBB & 1.445 & 0.090 \\
+        STL & 1.230 & 0.076 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+Pipeline:
+
+\begin{center}
+    \begin{tabular}{ |c|c|c| }
+        \hline
+        Версия & Ускорение & Эффективность \\
+        \hline
+        Последовательная & 1 & 0.0625 \\
+        OpenMP & 2.934 & 0.183 \\
+        TBB & 1.522 & 0.095 \\
+        STL & 1.297 & 0.081 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Выводы}
+
+Распараллеливание данного алгоритма хоть и незначительно, но ускорило его работу. 
+Параллельная версия с STL потоками с этим справилась хуже всего, с OpenMP -- лучше всего, ускорив работу более, чем в 5 раз. 
+Остальные технологии ускорили работу лишь в 1.5 раза. 
+\newpage
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+
+В рамках данной лабораторной работы я изучил алгоритм построения выпуклой оболочки 
+проходом Грэхема и исследовал возможности его распараллеливания. Научился работать с технологией OpenMP, библиотекой Intel Thread Building Blocks (TBB) и потоками стандартной библиотеки языка C++.
+Реализовал при помощи этих технологий параллельные версии данного алгоритма и исследовал их.
+
+Наиболее эффективной и удобной в использовании для меня оказалась OpenMP.
+\newpage
+\section*{Использованная литература}
+
+\begin{enumerate}
+    \item Сысоев А.В. Лекции по курсу "Параллельное программирование для систем с общей памятью"
+    \item Построение минимальных выпуклых оболочек // Habr -- Режим доступа: \url{https://habr.com/ru/articles/144921/}
+    \item Intel® oneAPI Threading Building Blocks Cookbook -- Режим доступа: \url{https://www.intel.com/content/www/us/en/docs/onetbb/cookbook/2021-6/overview.html}
+\end{enumerate}
+\appendix
+\titleformat{\section}{\newpage\normalfont\Large\bfseries}{Приложение \thesection.}{1em}{}
+\section{Код последовательной версии}
+
+\begin{lstlisting}
+#include "include/kriseev_m_convex_hull_seq.hpp"
+
+#include <algorithm>
+#include <limits>
+
+double angle1(const KriseevMTaskSeq::Point &origin, const KriseevMTaskSeq::Point &point) {
+  double dx = point.first - origin.first;
+  double dy = point.second - origin.second;
+  if (dx == 0.0 && dy == 0.0) {
+    // Return this incorrect value to ensure
+    // the origin is always first in sorted array
+    return -1.0;
+  }
+  // Calculating angle using algorithm from
+  // https://stackoverflow.com/a/14675998/14116050
+  return (dy >= 0) ? (dx >= 0 ? dy / (dx + dy) : 1 - dx / (-dx + dy))
+                   : (dx < 0 ? 2 - dy / (-dx - dy) : 3 + dx / (dx - dy));
+}
+bool compareForSort1(const KriseevMTaskSeq::Point &origin, const KriseevMTaskSeq::Point &a,
+                     const KriseevMTaskSeq::Point &b) {
+  double angleA = angle1(origin, a);
+  double angleB = angle1(origin, b);
+  if (angleA < angleB) {
+    return true;
+  }
+  if (angleA > angleB) {
+    return false;
+  }
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // The further point must be first
+  // so the others will be ignored
+  return dxA * dxA + dyA * dyA > dxB * dxB + dyB * dyB;
+}
+
+bool checkOrientation(const KriseevMTaskSeq::Point &origin, const KriseevMTaskSeq::Point &a,
+                      const KriseevMTaskSeq::Point &b) {
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // Using cross product to check orientation
+  return dxA * dyB - dyA * dxB < 0;
+}
+
+bool KriseevMTaskSeq::ConvexHullTask::pre_processing() {
+  internal_order_test();
+  auto *pointsX = reinterpret_cast<double *>(taskData->inputs.at(0));
+  auto *pointsY = reinterpret_cast<double *>(taskData->inputs.at(1));
+  points = std::vector<std::pair<double, double>>();
+  points.reserve(taskData->inputs_count[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; ++i) {
+    points.emplace_back(pointsX[i], pointsY[i]);
+  }
+
+  return true;
+}
+
+bool KriseevMTaskSeq::ConvexHullTask::validation() {
+  internal_order_test();
+  if (taskData->inputs_count.at(0) != taskData->inputs_count.at(1)) {
+    return false;
+  }
+  if (taskData->inputs_count[0] < 3) {
+    return false;
+  }
+  return true;
+}
+
+bool KriseevMTaskSeq::ConvexHullTask::run() {
+  internal_order_test();
+  auto originIt =
+      std::min_element(points.begin(), points.end(), [](auto &a, auto &b) -> bool { return a.second < b.second; });
+  auto origin = *originIt;
+
+  for (size_t phase = 0; phase < points.size(); phase++) {
+    if ((phase & 1) == 0) {
+      for (size_t i = 1; i < points.size(); i += 2) {
+        if (compareForSort1(origin, points[i], points[i - 1])) {
+          std::iter_swap(points.begin() + i, points.begin() + i - 1);
+        }
+      }
+    } else {
+      for (size_t i = 1; i < points.size() - 1; i += 2) {
+        if (compareForSort1(origin, points[i + 1], points[i])) {
+          std::iter_swap(points.begin() + i, points.begin() + i + 1);
+        }
+      }
+    }
+  }
+
+  std::vector<Point> hull;
+  hull.reserve(points.size());
+  hull.push_back(points[0]);
+  hull.push_back(points[1]);
+  hull.push_back(points[2]);
+
+  for (uint32_t i = 3; i < points.size(); ++i) {
+    while (hull.size() > 1 && !checkOrientation(hull.back(), *(hull.end() - 2), points[i])) {
+      hull.pop_back();
+    }
+    hull.push_back(points[i]);
+  }
+  this->finalHull = hull;
+  return true;
+}
+
+bool KriseevMTaskSeq::ConvexHullTask::post_processing() {
+  internal_order_test();
+  auto *resultsX = reinterpret_cast<double *>(taskData->outputs[0]);
+  auto *resultsY = reinterpret_cast<double *>(taskData->outputs[1]);
+  for (size_t i = 0; i < finalHull.size(); ++i) {
+    resultsX[i] = finalHull[i].first;
+    resultsY[i] = finalHull[i].second;
+  }
+  taskData->outputs_count[0] = finalHull.size();
+  taskData->outputs_count[1] = finalHull.size();
+  return true;
+}
+\end{lstlisting}
+
+\section{Код версии с OpenMP}
+
+\begin{lstlisting}
+#include "include/kriseev_m_convex_hull_omp.hpp"
+
+#include <algorithm>
+#include <limits>
+
+namespace KriseevMTaskOmp {
+
+double angle(const KriseevMTaskOmp::Point &origin, const KriseevMTaskOmp::Point &point) {
+  double dx = point.first - origin.first;
+  double dy = point.second - origin.second;
+  if (dx == 0.0 && dy == 0.0) {
+    // Return this incorrect value to ensure
+    // the origin is always first in sorted array
+    return -1.0;
+  }
+  // Calculating angle using algorithm from
+  // https://stackoverflow.com/a/14675998/14116050
+  return (dy >= 0) ? (dx >= 0 ? dy / (dx + dy) : 1 - dx / (-dx + dy))
+                   : (dx < 0 ? 2 - dy / (-dx - dy) : 3 + dx / (dx - dy));
+}
+bool compareForSort(const KriseevMTaskOmp::Point &origin, const KriseevMTaskOmp::Point &a,
+                    const KriseevMTaskOmp::Point &b) {
+  double angleA = angle(origin, a);
+  double angleB = angle(origin, b);
+  if (angleA < angleB) {
+    return true;
+  }
+  if (angleA > angleB) {
+    return false;
+  }
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // The further point must be first
+  // so the others will be ignored
+  return dxA * dxA + dyA * dyA > dxB * dxB + dyB * dyB;
+}
+
+bool checkOrientation(const KriseevMTaskOmp::Point &origin, const KriseevMTaskOmp::Point &a,
+                      const KriseevMTaskOmp::Point &b) {
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // Using cross product to check orientation
+  return dxA * dyB - dyA * dxB < 0;
+}
+
+bool KriseevMTaskOmp::ConvexHullTask::pre_processing() {
+  internal_order_test();
+  auto *pointsX = reinterpret_cast<double *>(taskData->inputs.at(0));
+  auto *pointsY = reinterpret_cast<double *>(taskData->inputs.at(1));
+  points = std::vector<std::pair<double, double>>();
+  points.reserve(taskData->inputs_count[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; ++i) {
+    points.emplace_back(pointsX[i], pointsY[i]);
+  }
+
+  return true;
+}
+
+bool KriseevMTaskOmp::ConvexHullTask::validation() {
+  internal_order_test();
+  if (taskData->inputs_count.at(0) != taskData->inputs_count.at(1)) {
+    return false;
+  }
+  if (taskData->inputs_count[0] < 3) {
+    return false;
+  }
+
+  return true;
+}
+
+bool KriseevMTaskOmp::ConvexHullTask::run() {
+  internal_order_test();
+  auto originIt =
+      std::min_element(points.begin(), points.end(), [](auto &a, auto &b) -> bool { return a.second < b.second; });
+  auto origin = *originIt;
+
+  int pointsSize = static_cast<int>(points.size());
+
+#pragma omp parallel
+  for (int phase = 0; phase < pointsSize; phase++) {
+    if ((phase & 1) == 0) {
+#pragma omp for
+      for (int i = 1; i < pointsSize; i += 2) {
+        if (compareForSort(origin, points[i], points[i - 1])) {
+          std::iter_swap(points.begin() + i, points.begin() + i - 1);
+        }
+      }
+    } else {
+#pragma omp for
+      for (int i = 1; i < pointsSize - 1; i += 2) {
+        if (compareForSort(origin, points[i + 1], points[i])) {
+          std::iter_swap(points.begin() + i, points.begin() + i + 1);
+        }
+      }
+    }
+  }
+
+  std::vector<Point> hull;
+  hull.reserve(points.size());
+  hull.push_back(points[0]);
+  hull.push_back(points[1]);
+  hull.push_back(points[2]);
+
+  for (uint32_t i = 3; i < points.size(); ++i) {
+    while (hull.size() > 1 && !checkOrientation(hull.back(), *(hull.end() - 2), points[i])) {
+      hull.pop_back();
+    }
+    hull.push_back(points[i]);
+  }
+  this->finalHull = hull;
+  return true;
+}
+
+bool KriseevMTaskOmp::ConvexHullTask::post_processing() {
+  internal_order_test();
+  auto *resultsX = reinterpret_cast<double *>(taskData->outputs[0]);
+  auto *resultsY = reinterpret_cast<double *>(taskData->outputs[1]);
+  for (size_t i = 0; i < finalHull.size(); ++i) {
+    resultsX[i] = finalHull[i].first;
+    resultsY[i] = finalHull[i].second;
+  }
+  taskData->outputs_count[0] = finalHull.size();
+  taskData->outputs_count[1] = finalHull.size();
+  return true;
+}
+
+}  // namespace KriseevMTaskOmp
+\end{lstlisting}
+
+\section{Код версии с TBB}
+
+\begin{lstlisting}
+#include "include/kriseev_m_convex_hull_tbb.hpp"
+
+#include <tbb/parallel_for.h>
+
+#include <algorithm>
+#include <limits>
+
+namespace KriseevMTaskTbb {
+
+double angle1(const KriseevMTaskTbb::Point &origin, const KriseevMTaskTbb::Point &point) {
+  double dx = point.first - origin.first;
+  double dy = point.second - origin.second;
+  if (dx == 0.0 && dy == 0.0) {
+    // Return this incorrect value to ensure 
+    // the origin is always first in sorted array
+    return -1.0;
+  }
+  // Calculating angle using algorithm from 
+  // https://stackoverflow.com/a/14675998/14116050
+  return (dy >= 0) ? (dx >= 0 ? dy / (dx + dy) : 1 - dx / (-dx + dy))
+                   : (dx < 0 ? 2 - dy / (-dx - dy) : 3 + dx / (dx - dy));
+}
+bool compareForSort1(const KriseevMTaskTbb::Point &origin, const KriseevMTaskTbb::Point &a,
+                     const KriseevMTaskTbb::Point &b) {
+  double angleA = angle1(origin, a);
+  double angleB = angle1(origin, b);
+  if (angleA < angleB) {
+    return true;
+  }
+  if (angleA > angleB) {
+    return false;
+  }
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // The further point must be first
+  // so the others will be ignored
+  return dxA * dxA + dyA * dyA > dxB * dxB + dyB * dyB;
+}
+
+bool checkOrientation(const KriseevMTaskTbb::Point &origin, const KriseevMTaskTbb::Point &a,
+                      const KriseevMTaskTbb::Point &b) {
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // Using cross product to check orientation
+  return dxA * dyB - dyA * dxB < 0;
+}
+
+bool KriseevMTaskTbb::ConvexHullTask::pre_processing() {
+  internal_order_test();
+  auto *pointsX = reinterpret_cast<double *>(taskData->inputs.at(0));
+  auto *pointsY = reinterpret_cast<double *>(taskData->inputs.at(1));
+  points = std::vector<std::pair<double, double>>();
+  points.reserve(taskData->inputs_count[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; ++i) {
+    points.emplace_back(pointsX[i], pointsY[i]);
+  }
+
+  return true;
+}
+
+bool KriseevMTaskTbb::ConvexHullTask::validation() {
+  internal_order_test();
+  if (taskData->inputs_count.at(0) != taskData->inputs_count.at(1)) {
+    return false;
+  }
+  if (taskData->inputs_count[0] < 3) {
+    return false;
+  }
+  return true;
+}
+
+bool KriseevMTaskTbb::ConvexHullTask::run() {
+  internal_order_test();
+  const size_t grainSizeDenominator = 16;
+  auto originIt =
+      std::min_element(points.begin(), points.end(), [](auto &a, auto &b) -> bool { return a.second < b.second; });
+  auto origin = *originIt;
+  for (size_t phase = 0; phase < points.size(); phase++) {
+    if ((phase & 1) == 0) {
+      tbb::parallel_for(tbb::blocked_range<size_t>(1, points.size(), points.size() / grainSizeDenominator),
+                        [origin, this](const tbb::blocked_range<size_t> &r) {
+                          size_t begin = r.begin();
+                          const size_t end = r.end();
+                          if ((begin & 1) == 0) {
+                            begin++;
+                          }
+                          for (size_t i = begin; i < end; i += 2) {
+                            if (compareForSort1(origin, points[i], points[i - 1])) {
+                              std::iter_swap(points.begin() + i, points.begin() + i - 1);
+                            }
+                          }
+                        });
+    } else {
+      tbb::parallel_for(tbb::blocked_range<size_t>(1, points.size() - 1, points.size() / grainSizeDenominator),
+                        [origin, this](const tbb::blocked_range<size_t> &r) {
+                          size_t begin = r.begin();
+                          const size_t end = r.end();
+                          if ((begin & 1) == 0) {
+                            begin++;
+                          }
+                          for (size_t i = begin; i < end; i += 2) {
+                            if (compareForSort1(origin, points[i + 1], points[i])) {
+                              std::iter_swap(points.begin() + i, points.begin() + i + 1);
+                            }
+                          }
+                        });
+    }
+  }
+
+  std::vector<Point> hull;
+  hull.reserve(points.size());
+  hull.push_back(points[0]);
+  hull.push_back(points[1]);
+  hull.push_back(points[2]);
+
+  for (uint32_t i = 3; i < points.size(); ++i) {
+    while (hull.size() > 1 && !checkOrientation(hull.back(), *(hull.end() - 2), points[i])) {
+      hull.pop_back();
+    }
+    hull.push_back(points[i]);
+  }
+  this->finalHull = hull;
+  return true;
+}
+
+bool KriseevMTaskTbb::ConvexHullTask::post_processing() {
+  internal_order_test();
+  auto *resultsX = reinterpret_cast<double *>(taskData->outputs[0]);
+  auto *resultsY = reinterpret_cast<double *>(taskData->outputs[1]);
+  for (size_t i = 0; i < finalHull.size(); ++i) {
+    resultsX[i] = finalHull[i].first;
+    resultsY[i] = finalHull[i].second;
+  }
+  taskData->outputs_count[0] = finalHull.size();
+  taskData->outputs_count[1] = finalHull.size();
+  return true;
+}
+
+}  // namespace KriseevMTaskTbb
+\end{lstlisting}
+
+\section{Код версии с потоками STL}
+
+\begin{lstlisting}
+#include "include/kriseev_m_convex_hull_stl.hpp"
+
+#include <algorithm>
+#include <barrier>
+#include <limits>
+#include <thread>
+
+namespace KriseevMTaskStl {
+
+double angle1(const KriseevMTaskStl::Point &origin, const KriseevMTaskStl::Point &point) {
+  double dx = point.first - origin.first;
+  double dy = point.second - origin.second;
+  if (dx == 0.0 && dy == 0.0) {
+    // Return this incorrect value to ensure 
+    // the origin is always first in sorted array
+    return -1.0;
+  }
+  // Calculating angle using algorithm 
+  // from https://stackoverflow.com/a/14675998/14116050
+  return (dx >= 0 ? dy / (dx + dy) : 1 - dx / (dy - dx));
+}
+bool compareForSort1(const KriseevMTaskStl::Point &origin, const KriseevMTaskStl::Point &a,
+                     const KriseevMTaskStl::Point &b) {
+  double angleA = angle1(origin, a);
+  double angleB = angle1(origin, b);
+  if (angleA < angleB) {
+    return true;
+  }
+  if (angleA > angleB) {
+    return false;
+  }
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // The further point must be first
+  // so the others will be ignored
+  return dxA * dxA + dyA * dyA > dxB * dxB + dyB * dyB;
+}
+
+void sortPoints(std::vector<Point> &points, const KriseevMTaskStl::Point &origin) {
+  size_t numThreads = std::thread::hardware_concurrency();
+
+  size_t chunkSize = points.size() / numThreads;
+  if (points.size() % numThreads > 0) {
+    chunkSize++;
+  }
+  if (points.size() <= numThreads) {
+    chunkSize = points.size();
+    numThreads = 1;
+  }
+
+  std::vector<std::thread> threads;
+  std::barrier b(numThreads);
+
+  auto work = [&b](std::vector<Point> &points, Point origin, size_t chunkSize, size_t threadNum) {
+    size_t firstIndex = threadNum * chunkSize;
+    if ((firstIndex & 1) == 0) firstIndex++;
+
+    size_t lastIndex = (threadNum + 1) * chunkSize;
+    if (lastIndex > points.size()) {
+      lastIndex = points.size();
+    }
+    size_t pointsSize = points.size();
+    auto pointsBegin = points.begin();
+    
+    size_t lastIndexOdd = lastIndex == points.size() ? lastIndex - 1 : lastIndex;
+    for (size_t phase = 0; phase < pointsSize; phase++) {
+      if ((phase & 1) == 0) {
+        for (size_t i = firstIndex; i < lastIndex; i += 2) {
+          if (compareForSort1(origin, points[i], points[i - 1])) {
+            std::iter_swap(pointsBegin + i, pointsBegin + i - 1);
+          }
+        }
+      } else {
+        for (size_t i = firstIndex; i < lastIndexOdd; i += 2) {
+          if (compareForSort1(origin, points[i + 1], points[i])) {
+            std::iter_swap(pointsBegin + i, pointsBegin + i + 1);
+          }
+        }
+      }
+
+      b.arrive_and_wait();
+    }
+  };
+  for (size_t t = 0; t < numThreads; ++t) {
+    threads.emplace_back(work, std::ref(points), origin, chunkSize, t);
+  }
+  for (size_t t = 0; t < numThreads; ++t) {
+    threads[t].join();
+  }
+}
+
+bool checkOrientation(const KriseevMTaskStl::Point &origin, const KriseevMTaskStl::Point &a,
+                      const KriseevMTaskStl::Point &b) {
+  double dxA = a.first - origin.first;
+  double dyA = a.second - origin.second;
+  double dxB = b.first - origin.first;
+  double dyB = b.second - origin.second;
+  // Using cross product to check orientation
+  return dxA * dyB - dyA * dxB < 0;
+}
+
+bool KriseevMTaskStl::ConvexHullTask::pre_processing() {
+  internal_order_test();
+  auto *pointsX = reinterpret_cast<double *>(taskData->inputs.at(0));
+  auto *pointsY = reinterpret_cast<double *>(taskData->inputs.at(1));
+  points = std::vector<std::pair<double, double>>();
+  points.reserve(taskData->inputs_count[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; ++i) {
+    points.emplace_back(pointsX[i], pointsY[i]);
+  }
+
+  return true;
+}
+
+bool KriseevMTaskStl::ConvexHullTask::validation() {
+  internal_order_test();
+  if (taskData->inputs_count.at(0) != taskData->inputs_count.at(1)) {
+    return false;
+  }
+  if (taskData->inputs_count[0] < 3) {
+    return false;
+  }
+  return true;
+}
+
+bool KriseevMTaskStl::ConvexHullTask::run() {
+  internal_order_test();
+  auto originIt =
+      std::min_element(points.begin(), points.end(), [](auto &a, auto &b) -> bool { return a.second < b.second; });
+  auto origin = *originIt;
+
+  sortPoints(points, origin);
+
+  std::vector<Point> hull;
+  hull.reserve(points.size());
+  hull.push_back(points[0]);
+  hull.push_back(points[1]);
+  hull.push_back(points[2]);
+
+  for (uint32_t i = 3; i < points.size(); ++i) {
+    while (hull.size() > 1 && !checkOrientation(hull.back(), *(hull.end() - 2), points[i])) {
+      hull.pop_back();
+    }
+    hull.push_back(points[i]);
+  }
+  this->finalHull = hull;
+  return true;
+}
+bool KriseevMTaskStl::ConvexHullTask::post_processing() {
+  internal_order_test();
+  auto *resultsX = reinterpret_cast<double *>(taskData->outputs[0]);
+  auto *resultsY = reinterpret_cast<double *>(taskData->outputs[1]);
+  for (size_t i = 0; i < finalHull.size(); ++i) {
+    resultsX[i] = finalHull[i].first;
+    resultsY[i] = finalHull[i].second;
+  }
+  taskData->outputs_count[0] = finalHull.size();
+  taskData->outputs_count[1] = finalHull.size();
+  return true;
+}
+
+}  // namespace KriseevMTaskStl
+\end{lstlisting}
+
+\section{Код Performance тестов}
+
+Тесты для фреймворка Google Tests. Код для каждой из версий отличается 
+только используемым пространством имён и таймером для соответствующей технологии.
+
+\begin{lstlisting}
+TEST(kriseev_m_convex_hull_graham_stl, test_pipeline_run) {
+  const int count = 5000;
+  // Create data
+  std::vector<double> pX;
+  std::vector<double> pY;
+  std::mt19937 gen(1587443);
+  std::uniform_real_distribution<> dis(-2.5, 4.0);
+  for (int i = 0; i < count; ++i) {
+    pX.emplace_back(dis(gen));
+    pY.emplace_back(dis(gen));
+  }
+  std::vector<std::pair<double, double>> expectedPoints = {
+      {-3.0, -3.5},
+      {4.8, -3.2},
+      {4.65, 4.5},
+      {-3.2, 4.25},
+  };
+  pX.emplace_back(expectedPoints[1].first);
+  pY.emplace_back(expectedPoints[1].second);
+  pX.emplace_back(expectedPoints[0].first);
+  pY.emplace_back(expectedPoints[0].second);
+  pX.emplace_back(expectedPoints[3].first);
+  pY.emplace_back(expectedPoints[3].second);
+  pX.emplace_back(expectedPoints[2].first);
+  pY.emplace_back(expectedPoints[2].second);
+  std::vector<double> outX(pX.size());
+  std::vector<double> outY(pY.size());
+
+  // Create TaskData
+  std::shared_ptr<ppc::core::TaskData> data = std::make_shared<ppc::core::TaskData>();
+  data->inputs.emplace_back(reinterpret_cast<uint8_t *>(pX.data()));
+  data->inputs_count.emplace_back(pX.size());
+  data->inputs.emplace_back(reinterpret_cast<uint8_t *>(pY.data()));
+  data->inputs_count.emplace_back(pY.size());
+
+  data->outputs.emplace_back(reinterpret_cast<uint8_t *>(outX.data()));
+  data->outputs_count.emplace_back(outX.size());
+  data->outputs.emplace_back(reinterpret_cast<uint8_t *>(outY.data()));
+  data->outputs_count.emplace_back(outY.size());
+
+  // Create Task
+  auto sequentialTask = std::make_shared<KriseevMTaskStl::ConvexHullTask>(data);
+
+  // Create Perf attributes
+  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+  perfAttr->num_running = 10;
+
+  const auto t0 = std::chrono::high_resolution_clock::now();
+  perfAttr->current_timer = [&] {
+    auto current_time_point = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        current_time_point - t0).count();
+    return static_cast<double>(duration) * 1e-9;
+  };
+
+  // Create and init perf results
+  auto perfResults = std::make_shared<ppc::core::PerfResults>();
+
+  // Create Perf analyzer
+  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(sequentialTask);
+  perfAnalyzer->pipeline_run(perfAttr, perfResults);
+  ppc::core::Perf::print_perf_statistic(perfResults);
+
+  ASSERT_EQ(expectedPoints.size(), data->outputs_count[0]);
+  ASSERT_EQ(expectedPoints.size(), data->outputs_count[1]);
+
+  for (size_t i = 0; i < expectedPoints.size(); ++i) {
+    EXPECT_EQ(expectedPoints[i].first, outX[i]);
+    EXPECT_EQ(expectedPoints[i].second, outY[i]);
+  }
+}
+TEST(kriseev_m_convex_hull_graham_stl, test_task_run) {
+  const int count = 5000;
+  // Create data
+  std::vector<double> pX;
+  std::vector<double> pY;
+  std::mt19937 gen(1589938);
+  std::uniform_real_distribution<> dis(-2.5, 4.0);
+  for (int i = 0; i < count; ++i) {
+    pX.emplace_back(dis(gen));
+    pY.emplace_back(dis(gen));
+  }
+  std::vector<std::pair<double, double>> expectedPoints = {
+      {-3.0, -3.5},
+      {4.8, -3.2},
+      {4.65, 4.5},
+      {-3.2, 4.25},
+  };
+  pX.emplace_back(expectedPoints[1].first);
+  pY.emplace_back(expectedPoints[1].second);
+  pX.emplace_back(expectedPoints[0].first);
+  pY.emplace_back(expectedPoints[0].second);
+  pX.emplace_back(expectedPoints[3].first);
+  pY.emplace_back(expectedPoints[3].second);
+  pX.emplace_back(expectedPoints[2].first);
+  pY.emplace_back(expectedPoints[2].second);
+  std::vector<double> outX(pX.size());
+  std::vector<double> outY(pY.size());
+
+  // Create TaskData
+  std::shared_ptr<ppc::core::TaskData> data = std::make_shared<ppc::core::TaskData>();
+  data->inputs.emplace_back(reinterpret_cast<uint8_t *>(pX.data()));
+  data->inputs_count.emplace_back(pX.size());
+  data->inputs.emplace_back(reinterpret_cast<uint8_t *>(pY.data()));
+  data->inputs_count.emplace_back(pY.size());
+
+  data->outputs.emplace_back(reinterpret_cast<uint8_t *>(outX.data()));
+  data->outputs_count.emplace_back(outX.size());
+  data->outputs.emplace_back(reinterpret_cast<uint8_t *>(outY.data()));
+  data->outputs_count.emplace_back(outY.size());
+
+  // Create Task
+  auto sequentialTask = std::make_shared<KriseevMTaskStl::ConvexHullTask>(data);
+
+  // Create Perf attributes
+  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+  perfAttr->num_running = 10;
+  const auto t0 = std::chrono::high_resolution_clock::now();
+  perfAttr->current_timer = [&] {
+    auto current_time_point = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        current_time_point - t0).count();
+    return static_cast<double>(duration) * 1e-9;
+  };
+
+  // Create and init perf results
+  auto perfResults = std::make_shared<ppc::core::PerfResults>();
+
+  // Create Perf analyzer
+  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(sequentialTask);
+  perfAnalyzer->task_run(perfAttr, perfResults);
+  ppc::core::Perf::print_perf_statistic(perfResults);
+
+  ASSERT_EQ(expectedPoints.size(), data->outputs_count[0]);
+  ASSERT_EQ(expectedPoints.size(), data->outputs_count[1]);
+
+  for (size_t i = 0; i < expectedPoints.size(); ++i) {
+    EXPECT_EQ(expectedPoints[i].first, outX[i]);
+    EXPECT_EQ(expectedPoints[i].second, outY[i]);
+  }
+}
+
+\end{lstlisting}
+
+\end{document}
