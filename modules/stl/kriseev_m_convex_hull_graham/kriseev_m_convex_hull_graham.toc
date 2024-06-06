@@ -10,8 +10,11 @@
 \contentsline {subsection}{\numberline {1.7}Результаты экспериментов}{4}{subsection.1.7}%
 \contentsline {subsection}{\numberline {1.8}Выводы}{5}{subsection.1.8}%
 \contentsline {section}{Заключение}{6}{subsection.1.8}%
+\ttl@change@i {\@ne }{section}{0em}{}{\textbf {Приложение \thecontentslabel }.\space }{\bfseries }{\cftdotfill {\cftdotsep } \bfseries \contentspage }\relax 
+\ttl@change@v {section}{}{}{}\relax 
 \contentsline {section}{\numberline {A}Код последовательной версии}{7}{appendix.A}%
 \contentsline {section}{\numberline {B}Код версии с OpenMP}{10}{appendix.B}%
 \contentsline {section}{\numberline {C}Код версии с TBB}{13}{appendix.C}%
 \contentsline {section}{\numberline {D}Код версии с потоками STL}{17}{appendix.D}%
 \contentsline {section}{\numberline {E}Код Performance тестов}{21}{appendix.E}%
+\contentsfinish 

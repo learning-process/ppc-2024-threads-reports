@@ -10,6 +10,7 @@
 \usepackage{titlesec}
 \usepackage{secdot}
 \usepackage{graphicx}
+\usepackage{titletoc}
 \graphicspath{ {./images/} }
 \usepackage{tocloft}
 \titlelabel{\thetitle. \quad}
@@ -289,8 +290,18 @@ Pipeline:
     \item Intel® oneAPI Threading Building Blocks Cookbook -- Режим доступа: \url{https://www.intel.com/content/www/us/en/docs/onetbb/cookbook/2021-6/overview.html}
 \end{enumerate}
 \appendix
-\titleformat{\section}{\newpage\normalfont\Large\bfseries}{Приложение \thesection.}{1em}{}
+\renewcommand{\contentslabel}{Приложение }
+\titleformat{\section}{\newpage\normalfont\Large\bfseries}{\contentslabel\thesection.}{1em}{}
+
+\titlecontents{section}
+              [0em]
+              {}%
+              {\textbf{Приложение \thecontentslabel}.\space}%
+              {\bfseries}%
+              {\cftdotfill{\cftdotsep} \bfseries \contentspage}%
+
 \section{Код последовательной версии}
+
 
 \begin{lstlisting}
 #include "include/kriseev_m_convex_hull_seq.hpp"
