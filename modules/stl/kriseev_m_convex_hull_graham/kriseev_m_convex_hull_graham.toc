@@ -5,16 +5,16 @@
 \contentsline {subsection}{\numberline {1.2}Описание алгоритма}{3}{subsection.1.2}%
 \contentsline {subsection}{\numberline {1.3}Схема распараллеливания}{3}{subsection.1.3}%
 \contentsline {subsection}{\numberline {1.4}Описание OpenMP версии}{3}{subsection.1.4}%
-\contentsline {subsection}{\numberline {1.5}Описание TBB версии}{4}{subsection.1.5}%
-\contentsline {subsection}{\numberline {1.6}Описание версии с std::thread}{4}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.5}Описание TBB версии}{3}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Описание версии с std::thread}{3}{subsection.1.6}%
 \contentsline {subsection}{\numberline {1.7}Результаты экспериментов}{4}{subsection.1.7}%
-\contentsline {subsection}{\numberline {1.8}Выводы}{5}{subsection.1.8}%
-\contentsline {section}{Заключение}{6}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.8}Выводы}{4}{subsection.1.8}%
+\contentsline {section}{Заключение}{5}{subsection.1.8}%
 \ttl@change@i {\@ne }{section}{0em}{}{\textbf {Приложение \thecontentslabel }.\space }{\bfseries }{\cftdotfill {\cftdotsep } \bfseries \contentspage }\relax 
 \ttl@change@v {section}{}{}{}\relax 
-\contentsline {section}{\numberline {A}Код последовательной версии}{7}{appendix.A}%
-\contentsline {section}{\numberline {B}Код версии с OpenMP}{10}{appendix.B}%
-\contentsline {section}{\numberline {C}Код версии с TBB}{13}{appendix.C}%
-\contentsline {section}{\numberline {D}Код версии с потоками STL}{17}{appendix.D}%
-\contentsline {section}{\numberline {E}Код Performance тестов}{21}{appendix.E}%
+\contentsline {section}{\numberline {A}Код последовательной версии}{6}{appendix.A}%
+\contentsline {section}{\numberline {B}Код версии с OpenMP}{9}{appendix.B}%
+\contentsline {section}{\numberline {C}Код версии с TBB}{12}{appendix.C}%
+\contentsline {section}{\numberline {D}Код версии с потоками STL}{15}{appendix.D}%
+\contentsline {section}{\numberline {E}Код Performance тестов}{18}{appendix.E}%
 \contentsfinish 
