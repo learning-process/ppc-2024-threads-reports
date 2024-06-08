@@ -1,0 +1,1299 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Вычисление многомерных интегралов с использованием многошаговой схемы>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР1\\Юрин А. Ю.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В современном мире вычислительной математики и информатики особое значение приобретает эффективное использование параллельных вычислений для решения сложных задач, таких как вычисление многомерных интегралов. Многомерные интегралы широко используются в различных областях науки и техники, включая физику, химию, биологию и экономику. Однако, вычисление таких интегралов является вычислительно сложным процессом, требующим значительных ресурсов и времени.
+
+\par Целью данной работы является разработка и исследование эффективности параллельных алгоритмов вычисления многомерных интегралов с использованием многошаговой схемы на системах с общей памятью.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+    \item Реализовать четыре версии алгоритма вычисления многомерных интегралов с использованием многошаговой схемы:
+    \begin{itemize}
+    \item Последовательная реализация
+    \item Параллельная реализация с использованием технологий OpenMP
+    \item Параллельная реализация с использованием технологий TBB
+    \item Параллельная реализация с использованием технологий STD cpp
+    \end{itemize}
+    \item Сравнить реализациии и производительность версий.
+    \item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Метод Адамса — конечноразностный многошаговый метод численного интегрирования обыкновенных дифференциальных уравнений первого порядка. В отличие от метода Рунге-Кутты данный метод использует для вычисления очередного значения искомого решения не одно, а несколько значений, которые уже были вычислены в предыдущих точках.
+
+\par \textbf{Алгоритм:}
+
+\begin{enumerate}
+    \item Сводим дифференциальное уравнение n-го порядка к системе, состоящей из n дифференциальных уравнений 1-го порядка.
+    \item Находим три последовательных значения функций с использованием метода Рунге-Кутта.
+    \item Находим остальные значения с использованием метода Адамса.
+\end{enumerate}
+
+\newpage
+
+% Описание схемы распараллеливания
+\section* {Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм состоит из двух последовательных частей, каждая из которых была распараллелена:}
+\begin{enumerate}
+    \item Метод Рунге-Кутта
+    \item Метод Адамса
+\end{enumerate}
+\vspace{2em}
+\par \textbf{В методе Рунге-Кутта было распараллелено:}
+\begin{enumerate}
+    \item Вычисление промежуточных значений функций и значений ${K=h*f}$
+    \item Вычисление значений функций в следующих точках: ${y_i = y_{i-1} + \Delta y}$
+\end{enumerate}
+\vspace{1em}
+\par \textbf{В методе Адамса было распараллелено:}
+\begin{enumerate}
+    \item Подготовка данных для метода Адамса после вычисления первых последовательных значений функций
+    \item Вычисление значений ${q=h*y'}$ и ${\Delta^i q}$ и значений функций в следующих точках ${y_i = y_{i-1} + \Delta y}$
+\end{enumerate}
+
+\newpage
+
+% Описание OpenMP, TBB, STL версий
+\section* {Описание OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма, использующего параллельные вычисления, основные участки кода, подлежащие распараллеливанию, остаются неизменными. Однако ключевое различие между версиями, такими как OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), заключается в предоставляемых ими возможностях и методах распараллеливания.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+    \item В OpenMP были использованы директивы:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[1.1] \#pragma omp parallel for - для распараллеливания циклов
+        \item[1.2] \#pragma omp parallel - для создания параллельного региона, внутри которого используется:
+        \vspace{0.5em}
+        \begin{enumerate}
+            \item[1.2.1] \#pragma omp for nowait - распараллеливания цикла внутри параллельной области без ожидания завершения всех потоков
+            \item[1.2.2]\#pragma omp for - распараллеливания цикла внутри параллельной области
+        \end{enumerate} 
+    \end{enumerate}   
+    \item В TBB было использовано:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[2.1]  tbb::parallel\_for(tbb::blocked\_range<>(), [\&](const tbb::blocked\_range<>\& r) {}) -  для распараллеливания циклов
+    \end{enumerate} 
+    \item В STL было использовано:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[3.1]  std::thread - для создания потоков с задачами
+        \item[3.2]  std::thread::join - для ожидания завершения выполнения всех потоков
+    \end{enumerate} 
+\end{enumerate}
+
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма была проверена на дифференциальных уравнениях, для которых было найдено точное решение в виде функции или приближённое решение было найдено на бумаге.
+\par Тест на производительность проводился на системе, состоящей из 5 млн линейных дифференциальных уравнений 1-го порядка с коэффициентами равными значениям sin(x)
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: m2 pro 10 ядер CPU, 16 ядер GPU;
+\item Оперативная память: 16гб;
+\item Операционная система: macOS Sonoma.
+\end{itemize}
+\par Количество потоков было ограничено до 4-х
+\par В таблице приведены средние значения за 10 запусков
+\par \textbf{Результаты экспериментов:}
+\begin{center}
+\begin{tabular}{ ||c | c | c ||  }
+    \hline Версия алгоритма & pipeline (сек) & task (сек)\\ 
+    \hline Последовательная & 7.4991405830 & 7.4395422500 \\
+    \hline OpenMP & 3.7153689766 & 3.6416089535 \\
+    \hline TBB & 3.6794553750 & 3.6170790420 \\ 
+    \hline STL & 3.7407531250 & 3.7089712090 \\ 
+    \hline
+\end{tabular}\\[5mm]
+\end{center}
+
+\newpage
+
+% Анализ результатов
+\section*{Анализ результатов}
+\addcontentsline{toc}{section}{Анализ результатов}
+\par Посчитаем средние коэффициенты ускорения по формуле $ p_i = \frac{T_{si}}{T_{pi}} $, где $T_{si}$ - время последовательного алгоритма, а $T_{pi}$ время параллельного алгоритма для {i} версии, где $i = {1, ..., 4}$.
+\par Посчитаем эффективность по формуле $e_i = p_i / 4$, где $4$ - кол-во потоков, $i = {1, ..., 4}$ 
+\par Получаем следующие результаты:
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+    Последовательная & 1 & 0.250 \\
+    OpenMP & 2.018 & 0.505 \\
+    TBB & 2.038 & 0.510 \\
+    STL & 2.005 & 0.501 \\
+\hline
+\end{tabular}
+
+\vspace{2em}
+
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+    Последовательная & 1 & 0.250 \\
+    OpenMP & 2.043 & 0.511 \\
+    TBB & 2.057 & 0.514 \\
+    STL & 2.006 & 0.501 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Вывод}: 
+    \begin{itemize}
+        \item В каждом запуске лучший результат показывала TBB версия, а STL - худший
+        \item Распараллеливание ускорило выполнение алгоритма примерно в 2 раза
+    \end{itemize}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+Таким образом, в рамках данной лабораторной работы были реализованы последовательный и параллельные алгоритмы вычисления многомерных интегралов с использованием многошаговой схемы. Проведенные замеры производительности доказали эффективность распараллеливания данного алгоритма.
+\par Также я распределил технологии по удобству использования, на мой взгляд:
+\begin{itemize}
+    \item[1.] OpenMP
+    \item[2.] TBB
+    \item[3.] STL
+\end{itemize}
+
+\newpage
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью"
+    \item Учебная литература по математике "Вычислительная математика в примерах и задачах" \space Н.В. Капчонов и И.А. Марон
+    \item Статьи на mathprofi \newline 
+    http://www.mathprofi.ru/
+\end{enumerate}
+
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Yurin Andrey
+#include "seq/yurin_a_multi_step_scheme/include/ops_seq.hpp"
+
+#include <thread>
+
+using namespace std::chrono_literals;
+
+bool MultiStepSchemeSequential::pre_processing() {
+  internal_order_test();
+  // Init value for input and output
+  auto* tempEquation = reinterpret_cast<double*>(taskData->inputs[0]);
+  equation = std::vector<double>(tempEquation, tempEquation + taskData->inputs_count[0]);
+
+  auto* tempBoundaryConditions = reinterpret_cast<double*>(taskData->inputs[1]);
+  boundaryConditions = std::vector<double>(tempBoundaryConditions, tempBoundaryConditions + taskData->inputs_count[1]);
+
+  h = reinterpret_cast<double*>(taskData->inputs[2])[0];
+  end = reinterpret_cast<double*>(taskData->inputs[3])[0];
+
+  return true;
+}
+
+bool MultiStepSchemeSequential::validation() {
+  internal_order_test();
+  // Check count elements of output
+  auto tend = reinterpret_cast<double*>(taskData->inputs[3])[0];
+  auto tstart = reinterpret_cast<double*>(taskData->inputs[1])[0];
+  auto th = reinterpret_cast<double*>(taskData->inputs[2])[0];
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] + 2 && taskData->inputs_count[2] == 1 &&
+         taskData->inputs_count[3] == 1 && taskData->outputs_count[0] == (tend - tstart) / th + 1;
+}
+
+bool MultiStepSchemeSequential::run() {
+  internal_order_test();
+  res.clear();
+  res.reserve(static_cast<uint32_t>((end - boundaryConditions[0]) / h) + 2);
+  res.push_back(boundaryConditions);
+  RungeKuttaMethod();
+  AdamsMethod();
+
+  return true;
+}
+
+bool MultiStepSchemeSequential::post_processing() {
+  internal_order_test();
+  auto* out_ptr = reinterpret_cast<double*>(taskData->outputs[0]);
+
+  for (uint32_t i = 0; i < res.size(); ++i) {
+    out_ptr[i] = res[i][1];
+  }
+  return true;
+}
+
+void MultiStepSchemeSequential::RungeKuttaMethod() {
+  uint32_t tempSize = 2 * (equation.size() - 3);
+  for (uint32_t i = 0; i < _numberOfSteps - 1; ++i) {
+    std::vector<std::vector<double>> tempAns(4);
+    tempAns[0] = res[i];
+    tempAns[0].resize(tempSize + 1);
+
+    for (uint32_t j = 1; j < 4; ++j) {
+      tempAns[j].resize(tempSize + 1);
+      if (j != 3) {
+        tempAns[j][0] = tempAns[0][0] + h / 2;
+      } else {
+        tempAns[j][0] = tempAns[0][0] + h;
+      }
+    }
+
+    for (uint32_t j = 0; j < 4; ++j) {
+      for (uint32_t k = 1; k < tempSize / 2 + 1; ++k) {
+        if (k != tempSize / 2) {
+          tempAns[j][k + tempSize / 2] = h * tempAns[j][k + 1];
+        } else {
+          for (uint32_t l = 1; l < equation.size(); ++l) {
+            double summand{};
+            if (l < equation.size() - 2) {
+              summand = (-1) * equation[l] * tempAns[j][tempSize / 2 - l + 1];
+            } else if (l == equation.size() - 2) {
+              summand = equation[l] * tempAns[j][0];
+            } else {
+              summand = equation[l];
+            }
+            tempAns[j][k + tempSize / 2] += summand;
+          }
+          tempAns[j][k + tempSize / 2] *= h / equation[0];
+        }
+
+        if (j < 2) {
+          tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2] / 2;
+        } else if (j < 3) {
+          tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2];
+        }
+      }
+    }
+
+    std::vector<double> deltaSum(equation.size() - 3);
+
+    for (uint32_t j = 1; j < tempSize / 2 + 1; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        if (k != 1 and k != 2) {
+          deltaSum[j - 1] += tempAns[k][j + tempSize / 2];
+        } else {
+          deltaSum[j - 1] += 2 * tempAns[k][j + tempSize / 2];
+        }
+      }
+      deltaSum[j - 1] /= 6;
+    }
+
+    std::vector<double> temp(res[i].size());
+    temp[0] = res[i][0] + h;
+
+    for (uint32_t j = 1; j < res[i].size(); ++j) {
+      temp[j] = res[i][j] + deltaSum[j - 1];
+    }
+
+    res.push_back(temp);
+  }
+}
+
+void MultiStepSchemeSequential::AdamsMethod() {
+  std::vector<std::vector<double>> tempAns(4);
+  if (end - res[0][0] < 0) {
+    return;
+  }
+
+  uint32_t stepCount{4};
+  uint32_t offset{_numberOfSteps + 3};
+
+  for (uint32_t i = 0; i < _numberOfSteps; ++i) {
+    uint32_t ind = _numberOfSteps - i - 1;
+    tempAns[ind].resize((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = res[ind][0];
+
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      for (uint32_t k = 0; k < stepCount; ++k) {
+        if (k == 0) {
+          tempAns[ind][j * offset + k + 1] = res[ind][j + 1];
+        } else if (k == 1 or k > 3) {
+          if (i == 0) continue;
+          auto diminutive = tempAns[ind + 1][j * offset + k];
+          auto deductible = tempAns[ind][j * offset + k];
+          tempAns[ind][j * offset + k + 1] = diminutive - deductible;
+        } else if (k == 2) {
+          if (j != res[0].size() - 2)
+            tempAns[ind][j * offset + k + 1] = res[ind][j + 2];
+          else {
+            for (uint32_t l = 1; l < equation.size(); ++l) {
+              double summand = 0;
+              if (l < equation.size() - 2) {
+                summand = (-1) * equation[equation.size() - l - 2] * tempAns[ind][(l - 1) * offset + k - 1];
+              } else if (l == equation.size() - 2) {
+                summand = equation[l] * res[ind][0];
+              } else {
+                summand = equation[l];
+              }
+              tempAns[ind][j * offset + k + 1] += summand;
+            }
+            tempAns[ind][j * offset + k + 1] /= equation[0];
+          }
+        } else {
+          tempAns[ind][j * offset + k + 1] = h * tempAns[ind][j * offset + k];
+        }
+      }
+    }
+    stepCount++;
+  }
+  uint32_t ind = _numberOfSteps;
+  for (uint32_t i = ind; i < (end - res[0][0]) / h + 1; ++i) {
+    tempAns.emplace_back((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = tempAns[ind - 1][0] + h;
+
+    std::vector<double> newStrInAns;
+    newStrInAns.reserve(res[0].size());
+    newStrInAns.push_back(tempAns[ind - 1][0] + h);
+
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      double tempDelta{};
+      for (uint32_t k = 0; k < _numberOfSteps; ++k) {
+        tempDelta += _coefficients[k] * tempAns[ind - k - 1][j * offset + 4 + k];
+      }
+
+      tempAns[ind - 1][j * offset + 2] = tempDelta;
+      tempAns[ind][j * offset + 1] = tempDelta + tempAns[ind - 1][j * offset + 1];
+      newStrInAns.push_back(tempAns[ind][j * offset + 1]);
+    }
+    res.push_back(newStrInAns);
+    newStrInAns.clear();
+
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      if (j != res[0].size() - 2) {
+        tempAns[ind][j * offset + 3] = res[i][j + 2];
+        tempAns[ind][j * offset + 4] = res[i][j + 2] * h;
+      } else {
+        for (uint32_t l = 1; l < equation.size(); ++l) {
+          double summand{};
+          if (l < equation.size() - 2) {
+            summand = (-1) * equation[equation.size() - l - 2] * res[i][l];
+          } else if (l == equation.size() - 2) {
+            summand = equation[l] * res[i][0];
+          } else {
+            summand = equation[l];
+          }
+          tempAns[ind][j * offset + 3] += summand;
+        }
+        tempAns[ind][j * offset + 3] /= equation[0];
+        tempAns[ind][j * offset + 4] = tempAns[ind][j * offset + 3] * h;
+      }
+    }
+
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      for (uint32_t k = 0; k < _numberOfSteps - 1; ++k) {
+        auto diminutive = tempAns[ind - k][j * offset + 4 + k];
+        auto deductible = tempAns[ind - 1 - k][j * offset + 4 + k];
+        tempAns[ind - k - 1][j * offset + 5 + k] = diminutive - deductible;
+      }
+    }
+    tempAns.erase(tempAns.begin());
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Yurin Andrey
+#include "omp/yurin_a_multi_step_scheme/include/ops_omp.hpp"
+
+#include <omp.h>
+
+#include <thread>
+
+using namespace std::chrono_literals;
+using namespace yurin_omp;
+
+bool MultiStepSchemeOMP::pre_processing() {
+  internal_order_test();
+  // Init value for input and output
+  auto* tempEquation = reinterpret_cast<double*>(taskData->inputs[0]);
+  equation = std::vector<double>(tempEquation, tempEquation + taskData->inputs_count[0]);
+
+  auto* tempBoundaryConditions = reinterpret_cast<double*>(taskData->inputs[1]);
+  boundaryConditions = std::vector<double>(tempBoundaryConditions, tempBoundaryConditions + taskData->inputs_count[1]);
+
+  h = reinterpret_cast<double*>(taskData->inputs[2])[0];
+  end = reinterpret_cast<double*>(taskData->inputs[3])[0];
+
+  return true;
+}
+
+bool MultiStepSchemeOMP::validation() {
+  internal_order_test();
+  // Check count elements of output
+  auto tend = reinterpret_cast<double*>(taskData->inputs[3])[0];
+  auto tstart = reinterpret_cast<double*>(taskData->inputs[1])[0];
+  auto th = reinterpret_cast<double*>(taskData->inputs[2])[0];
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] + 2 && taskData->inputs_count[2] == 1 &&
+         taskData->inputs_count[3] == 1 && taskData->outputs_count[0] == (tend - tstart) / th + 1;
+}
+
+bool MultiStepSchemeOMP::run() {
+  internal_order_test();
+  res.clear();
+  res.reserve(static_cast<uint32_t>((end - boundaryConditions[0]) / h) + 2);
+  res.push_back(boundaryConditions);
+  RungeKuttaMethod();
+  AdamsMethod();
+
+  return true;
+}
+
+bool MultiStepSchemeOMP::post_processing() {
+  internal_order_test();
+  auto* out_ptr = reinterpret_cast<double*>(taskData->outputs[0]);
+
+  for (uint32_t i = 0; i < res.size(); ++i) {
+    out_ptr[i] = res[i][1];
+  }
+  return true;
+}
+
+void MultiStepSchemeOMP::RungeKuttaMethod() {
+  uint32_t tempSize = 2 * (equation.size() - 3);
+
+  for (int16_t i = 0; i < _numberOfSteps - 1; ++i) {
+    std::vector<std::vector<double>> tempAns(4);
+    tempAns[0] = res[i];
+    tempAns[0].resize(tempSize + 1);
+
+    for (uint32_t j = 1; j < 4; ++j) {
+      tempAns[j].resize(tempSize + 1);
+      if (j != 3) {
+        tempAns[j][0] = tempAns[0][0] + h / 2;
+      } else {
+        tempAns[j][0] = tempAns[0][0] + h;
+      }
+    }
+
+    for (uint32_t j = 0; j < 4; ++j) {
+#pragma omp parallel for
+      for (int64_t k = 1; k < tempSize / 2 + 1; ++k) {
+        if (k != tempSize / 2) {
+          tempAns[j][k + tempSize / 2] = h * tempAns[j][k + 1];
+        } else {
+          double summand = 0;
+          for (uint32_t l = 1; l < equation.size(); ++l) {
+            if (l < equation.size() - 2) {
+              summand += (-1) * equation[l] * tempAns[j][tempSize / 2 - l + 1];
+            } else if (l == equation.size() - 2) {
+              summand += equation[l] * tempAns[j][0];
+            } else {
+              summand += equation[l];
+            }
+          }
+          tempAns[j][k + tempSize / 2] = summand * h / equation[0];
+        }
+
+        if (j < 2) {
+          tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2] / 2;
+        } else if (j < 3) {
+          tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2];
+        }
+      }
+    }
+
+    std::vector<double> deltaSum(equation.size() - 3);
+#pragma omp parallel for
+    for (int64_t j = 1; j < tempSize / 2 + 1; ++j) {
+      double sum = 0;
+      for (int k = 0; k < 4; ++k) {
+        if (k != 1 and k != 2) {
+          sum += tempAns[k][j + tempSize / 2];
+        } else {
+          sum += 2 * tempAns[k][j + tempSize / 2];
+        }
+      }
+      deltaSum[j - 1] = sum / 6;
+    }
+
+    std::vector<double> temp(res[i].size());
+    temp[0] = res[i][0] + h;
+
+    for (uint32_t j = 1; j < res[i].size(); ++j) {
+      temp[j] = res[i][j] + deltaSum[j - 1];
+    }
+
+    res.push_back(temp);
+  }
+}
+
+void MultiStepSchemeOMP::AdamsMethod() {
+  int32_t resSize = res[0].size();
+  std::vector<std::vector<double>> tempAns(4);
+  if (end - res[0][0] < 0) {
+    return;
+  }
+
+  int16_t stepCount{4};
+  int16_t offset = _numberOfSteps + 3;
+
+  for (int16_t i = 0; i < _numberOfSteps; ++i) {
+    uint32_t ind = _numberOfSteps - i - 1;
+    tempAns[ind].resize((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = res[ind][0];
+#pragma omp parallel for
+    for (int64_t j = 0; j < resSize - 1; ++j) {
+      for (int16_t k = 0; k < stepCount; ++k) {
+        if (k == 0) {
+          tempAns[ind][j * offset + k + 1] = res[ind][j + 1];
+        } else if (k == 1 or k > 3) {
+          if (i == 0) continue;
+          tempAns[ind][j * offset + k + 1] = tempAns[ind + 1][j * offset + k] - tempAns[ind][j * offset + k];
+        } else if (k == 2) {
+          if (j != resSize - 2)
+            tempAns[ind][j * offset + k + 1] = res[ind][j + 2];
+          else {
+            double summand = 0;
+            for (uint32_t l = 1; l < equation.size(); ++l) {
+              if (l < equation.size() - 2) {
+                summand += (-1) * equation[equation.size() - l - 2] * tempAns[ind][(l - 1) * offset + k - 1];
+              } else if (l == equation.size() - 2) {
+                summand += equation[l] * res[ind][0];
+              } else {
+                summand += equation[l];
+              }
+            }
+            tempAns[ind][j * offset + k + 1] = summand / equation[0];
+          }
+        } else {
+          tempAns[ind][j * offset + k + 1] = h * tempAns[ind][j * offset + k];
+        }
+      }
+    }
+    stepCount++;
+  }
+
+  int16_t ind = _numberOfSteps;
+
+  for (uint32_t i = ind; i < (end - res[0][0]) / h + 1; ++i) {
+    std::vector<double> newStrInAns;
+    tempAns.emplace_back((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = tempAns[ind - 1][0] + h;
+
+    newStrInAns.reserve(res[0].size());
+    newStrInAns.push_back(tempAns[ind - 1][0] + h);
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      double tempDelta{};
+      for (int16_t k = 0; k < _numberOfSteps; ++k) {
+        tempDelta += _coefficients[k] * tempAns[ind - k - 1][j * offset + 4 + k];
+      }
+
+      tempAns[ind - 1][j * offset + 2] = tempDelta;
+      tempAns[ind][j * offset + 1] = tempDelta + tempAns[ind - 1][j * offset + 1];
+      newStrInAns.push_back(tempAns[ind][j * offset + 1]);
+    }
+
+    res.push_back(newStrInAns);
+    auto resI0 = res[i][0];
+#pragma omp parallel
+    {
+#pragma omp for nowait
+      for (int64_t j = 0; j < resSize - 1; ++j) {
+        if (j != resSize - 2) {
+          auto x = res[i][j + 2];
+          tempAns[ind][j * offset + 3] = x;
+          tempAns[ind][j * offset + 4] = x * h;
+        } else {
+          double summand = 0;
+          for (uint32_t l = 1; l < equation.size(); ++l) {
+            if (l < equation.size() - 2) {
+              summand += (-1) * equation[equation.size() - l - 2] * res[i][l];
+            } else if (l == equation.size() - 2) {
+              summand += equation[l] * resI0;
+            } else {
+              summand += equation[l];
+            }
+          }
+          tempAns[ind][j * offset + 3] = summand / equation[0];
+          tempAns[ind][j * offset + 4] = summand / equation[0] * h;
+        }
+      }
+
+#pragma omp for
+      for (int64_t j = 0; j < resSize - 1; ++j) {
+        for (int32_t k = 0; k < _numberOfSteps - 1; ++k) {
+          tempAns[ind - k - 1][j * offset + 5 + k] =
+              tempAns[ind - k][j * offset + 4 + k] - tempAns[ind - 1 - k][j * offset + 4 + k];
+        }
+      }
+    }
+    tempAns.erase(tempAns.begin());
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Yurin Andrey
+#include "tbb/yurin_a_multi_step_scheme/include/ops_tbb.hpp"
+
+#include <tbb/tbb.h>
+
+#include <thread>
+
+using namespace std::chrono_literals;
+using namespace yurin_tbb;
+
+bool MultiStepSchemeTBB::pre_processing() {
+  internal_order_test();
+  // Init value for input and output
+  auto* tempEquation = reinterpret_cast<double*>(taskData->inputs[0]);
+  equation = std::vector<double>(tempEquation, tempEquation + taskData->inputs_count[0]);
+
+  auto* tempBoundaryConditions = reinterpret_cast<double*>(taskData->inputs[1]);
+  boundaryConditions = std::vector<double>(tempBoundaryConditions, tempBoundaryConditions + taskData->inputs_count[1]);
+
+  h = reinterpret_cast<double*>(taskData->inputs[2])[0];
+  end = reinterpret_cast<double*>(taskData->inputs[3])[0];
+
+  return true;
+}
+
+bool MultiStepSchemeTBB::validation() {
+  internal_order_test();
+  // Check count elements of output
+  auto tend = reinterpret_cast<double*>(taskData->inputs[3])[0];
+  auto tstart = reinterpret_cast<double*>(taskData->inputs[1])[0];
+  auto th = reinterpret_cast<double*>(taskData->inputs[2])[0];
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] + 2 && taskData->inputs_count[2] == 1 &&
+         taskData->inputs_count[3] == 1 && taskData->outputs_count[0] == (tend - tstart) / th + 1;
+}
+
+bool MultiStepSchemeTBB::run() {
+  internal_order_test();
+  res.clear();
+  res.reserve(static_cast<uint32_t>((end - boundaryConditions[0]) / h) + 2);
+  res.push_back(boundaryConditions);
+  RungeKuttaMethod();
+  AdamsMethod();
+
+  return true;
+}
+
+bool MultiStepSchemeTBB::post_processing() {
+  internal_order_test();
+  auto* out_ptr = reinterpret_cast<double*>(taskData->outputs[0]);
+
+  for (uint32_t i = 0; i < res.size(); ++i) {
+    out_ptr[i] = res[i][1];
+  }
+  return true;
+}
+
+void MultiStepSchemeTBB::RungeKuttaMethod() {
+  uint32_t tempSize = 2 * (equation.size() - 3);
+
+  for (int16_t i = 0; i < _numberOfSteps - 1; ++i) {
+    std::vector<std::vector<double>> tempAns(4);
+    tempAns[0] = res[i];
+    tempAns[0].resize(tempSize + 1);
+
+    for (uint32_t j = 1; j < 4; ++j) {
+      tempAns[j].resize(tempSize + 1);
+      if (j != 3) {
+        tempAns[j][0] = tempAns[0][0] + h / 2;
+      } else {
+        tempAns[j][0] = tempAns[0][0] + h;
+      }
+    }
+
+    for (uint32_t j = 0; j < 4; ++j) {
+      tbb::parallel_for(tbb::blocked_range<size_t>(1, tempSize / 2 + 1), [&](const tbb::blocked_range<size_t>& r) {
+        for (size_t k = r.begin(); k != r.end(); ++k) {
+          if (k != tempSize / 2) {
+            tempAns[j][k + tempSize / 2] = h * tempAns[j][k + 1];
+          } else {
+            double summand = 0;
+            for (uint32_t l = 1; l < equation.size(); ++l) {
+              if (l < equation.size() - 2) {
+                summand += (-1) * equation[l] * tempAns[j][tempSize / 2 - l + 1];
+              } else if (l == equation.size() - 2) {
+                summand += equation[l] * tempAns[j][0];
+              } else {
+                summand += equation[l];
+              }
+            }
+            tempAns[j][k + tempSize / 2] = summand * h / equation[0];
+          }
+
+          if (j < 2) {
+            tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2] / 2;
+          } else if (j < 3) {
+            tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2];
+          }
+        }
+      });
+    }
+
+    std::vector<double> deltaSum(equation.size() - 3);
+    tbb::parallel_for(tbb::blocked_range<size_t>(1, tempSize / 2 + 1), [&](const tbb::blocked_range<size_t>& r) {
+      for (size_t j = r.begin(); j != r.end(); ++j) {
+        double sum = 0;
+        for (int k = 0; k < 4; ++k) {
+          if (k != 1 && k != 2) {
+            sum += tempAns[k][j + tempSize / 2];
+          } else {
+            sum += 2 * tempAns[k][j + tempSize / 2];
+          }
+        }
+        deltaSum[j - 1] = sum / 6;
+      }
+    });
+
+    std::vector<double> temp(res[i].size());
+    temp[0] = res[i][0] + h;
+
+    for (uint32_t j = 1; j < res[i].size(); ++j) {
+      temp[j] = res[i][j] + deltaSum[j - 1];
+    }
+
+    res.push_back(temp);
+  }
+}
+
+void MultiStepSchemeTBB::AdamsMethod() {
+  int32_t resSize = res[0].size();
+  std::vector<std::vector<double>> tempAns(4);
+  if (end - res[0][0] < 0) {
+    return;
+  }
+
+  int16_t stepCount{4};
+  int16_t offset = _numberOfSteps + 3;
+
+  for (int16_t i = 0; i < _numberOfSteps; ++i) {
+    uint32_t ind = _numberOfSteps - i - 1;
+    tempAns[ind].resize((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = res[ind][0];
+    tbb::parallel_for(tbb::blocked_range<int32_t>(0, resSize - 1), [&](const tbb::blocked_range<int32_t>& r) {
+      for (int32_t j = r.begin(); j != r.end(); ++j) {
+        for (int16_t k = 0; k < stepCount; ++k) {
+          if (k == 0) {
+            tempAns[ind][j * offset + k + 1] = res[ind][j + 1];
+          } else if (k == 1 || k > 3) {
+            if (i == 0) continue;
+            tempAns[ind][j * offset + k + 1] = tempAns[ind + 1][j * offset + k] - tempAns[ind][j * offset + k];
+          } else if (k == 2) {
+            if (j != resSize - 2) {
+              tempAns[ind][j * offset + k + 1] = res[ind][j + 2];
+            } else {
+              double summand = 0;
+              for (uint32_t l = 1; l < equation.size(); ++l) {
+                if (l < equation.size() - 2) {
+                  summand += (-1) * equation[equation.size() - l - 2] * tempAns[ind][(l - 1) * offset + k - 1];
+                } else if (l == equation.size() - 2) {
+                  summand += equation[l] * res[ind][0];
+                } else {
+                  summand += equation[l];
+                }
+              }
+              tempAns[ind][j * offset + k + 1] = summand / equation[0];
+            }
+          } else {
+            tempAns[ind][j * offset + k + 1] = h * tempAns[ind][j * offset + k];
+          }
+        }
+      }
+    });
+    stepCount++;
+  }
+
+  int16_t ind = _numberOfSteps;
+
+  for (uint32_t i = ind; i < (end - res[0][0]) / h + 1; ++i) {
+    std::vector<double> newStrInAns;
+    tempAns.emplace_back((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = tempAns[ind - 1][0] + h;
+
+    newStrInAns.reserve(res[0].size());
+    newStrInAns.push_back(tempAns[ind - 1][0] + h);
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      double tempDelta{};
+      for (int16_t k = 0; k < _numberOfSteps; ++k) {
+        tempDelta += _coefficients[k] * tempAns[ind - k - 1][j * offset + 4 + k];
+      }
+
+      tempAns[ind - 1][j * offset + 2] = tempDelta;
+      tempAns[ind][j * offset + 1] = tempDelta + tempAns[ind - 1][j * offset + 1];
+      newStrInAns.push_back(tempAns[ind][j * offset + 1]);
+    }
+
+    res.push_back(newStrInAns);
+    auto resI0 = res[i][0];
+    auto equationSize = equation.size();
+    tbb::parallel_for(tbb::blocked_range<int32_t>(0, resSize - 1), [&](const tbb::blocked_range<int32_t>& r) {
+      for (int32_t j = r.begin(); j != r.end(); ++j) {
+        if (j != resSize - 2) {
+          auto x = res[i][j + 2];
+          tempAns[ind][j * offset + 3] = x;
+          tempAns[ind][j * offset + 4] = x * h;
+        } else {
+          double summand = 0;
+          for (uint32_t l = 1; l < equationSize; ++l) {
+            if (l < equationSize - 2) {
+              summand += (-1) * equation[equationSize - l - 2] * res[i][l];
+            } else if (l == equationSize - 2) {
+              summand += equation[l] * resI0;
+            } else {
+              summand += equation[l];
+            }
+          }
+          tempAns[ind][j * offset + 3] = summand / equation[0];
+          tempAns[ind][j * offset + 4] = summand / equation[0] * h;
+        }
+      }
+    });
+    tbb::parallel_for(tbb::blocked_range<int32_t>(0, resSize - 1), [&](const tbb::blocked_range<int32_t>& r) {
+      for (int32_t j = r.begin(); j != r.end(); ++j) {
+        for (int32_t k = 0; k < _numberOfSteps - 1; ++k) {
+          tempAns[ind - k - 1][j * offset + 5 + k] =
+              tempAns[ind - k][j * offset + 4 + k] - tempAns[ind - 1 - k][j * offset + 4 + k];
+        }
+      }
+    });
+    tempAns.erase(tempAns.begin());
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Yurin Andrey
+#include "stl/yurin_a_multi_step_scheme/include/ops_stl.hpp"
+
+#include <thread>
+
+using namespace std::chrono_literals;
+using namespace yurin_stl;
+
+void CalculateTempAns(uint32_t start, uint32_t end, uint32_t tempSize, uint32_t j, double h,
+                      const std::vector<double>& equation, std::vector<std::vector<double>>& tempAns) {
+  if (start >= end) {
+    return;
+  }
+
+  for (int64_t k = start; k < end; ++k) {
+    if (k != tempSize / 2) {
+      tempAns[j][k + tempSize / 2] = h * tempAns[j][k + 1];
+    } else {
+      double summand = 0;
+      for (uint32_t l = 1; l < equation.size(); ++l) {
+        if (l < equation.size() - 2) {
+          summand += (-1) * equation[l] * tempAns[j][tempSize / 2 - l + 1];
+        } else if (l == equation.size() - 2) {
+          summand += equation[l] * tempAns[j][0];
+        } else {
+          summand += equation[l];
+        }
+      }
+      tempAns[j][k + tempSize / 2] = summand * h / equation[0];
+    }
+
+    if (j < 2) {
+      tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2] / 2;
+    } else if (j < 3) {
+      tempAns[j + 1][k] = tempAns[j][k] + tempAns[j][k + tempSize / 2];
+    }
+  }
+}
+
+void CalculateDeltaSum(uint32_t start, uint32_t end, uint32_t tempSize, const std::vector<std::vector<double>>& tempAns,
+                       std::vector<double>& deltaSum) {
+  if (start >= end) {
+    return;
+  }
+
+  for (uint32_t j = start; j < end; ++j) {
+    for (int k = 0; k < 4; ++k) {
+      if (k != 1 and k != 2) {
+        deltaSum[j - 1] += tempAns[k][j + tempSize / 2];
+      } else {
+        deltaSum[j - 1] += 2 * tempAns[k][j + tempSize / 2];
+      }
+    }
+    deltaSum[j - 1] /= 6;
+  }
+}
+
+void CalculateTempAnsAdams(uint32_t start, uint32_t end, int16_t stepCount, uint32_t ind, uint32_t offset, double h,
+                           uint32_t i, uint32_t resSize, const std::vector<std::vector<double>>& res,
+                           const std::vector<double>& equation, std::vector<std::vector<double>>& tempAns) {
+  if (start >= end) {
+    return;
+  }
+
+  for (uint32_t j = start; j < end; ++j) {
+    for (int16_t k = 0; k < stepCount; ++k) {
+      if (k == 0) {
+        tempAns[ind][j * offset + k + 1] = res[ind][j + 1];
+      } else if (k == 1 or k > 3) {
+        if (i == 0) continue;
+        tempAns[ind][j * offset + k + 1] = tempAns[ind + 1][j * offset + k] - tempAns[ind][j * offset + k];
+      } else if (k == 2) {
+        if (j != resSize - 2)
+          tempAns[ind][j * offset + k + 1] = res[ind][j + 2];
+        else {
+          double summand = 0;
+          for (uint32_t l = 1; l < equation.size(); ++l) {
+            if (l < equation.size() - 2) {
+              summand += (-1) * equation[equation.size() - l - 2] * tempAns[ind][(l - 1) * offset + k - 1];
+            } else if (l == equation.size() - 2) {
+              summand += equation[l] * res[ind][0];
+            } else {
+              summand += equation[l];
+            }
+          }
+          tempAns[ind][j * offset + k + 1] = summand / equation[0];
+        }
+      } else {
+        tempAns[ind][j * offset + k + 1] = h * tempAns[ind][j * offset + k];
+      }
+    }
+  }
+}
+
+void CalculateAdams(uint32_t start, uint32_t end, uint32_t resSize, double h, uint32_t i, uint32_t ind, uint32_t offset,
+                    uint16_t numberOfSteps, const std::vector<double>& equation,
+                    const std::vector<std::vector<double>>& res, std::vector<std::vector<double>>& tempAns) {
+  if (start >= end) {
+    return;
+  }
+
+  auto resI0 = res[i][0];
+  for (uint32_t j = start; j < end; ++j) {
+    if (j != resSize - 2) {
+      tempAns[ind][j * offset + 3] = res[i][j + 2];
+      tempAns[ind][j * offset + 4] = res[i][j + 2] * h;
+    } else {
+      for (uint32_t l = 1; l < equation.size(); ++l) {
+        double summand;
+        if (l < equation.size() - 2) {
+          summand = (-1) * equation[equation.size() - l - 2] * res[i][l];
+        } else if (l == equation.size() - 2) {
+          summand = equation[l] * resI0;
+        } else {
+          summand = equation[l];
+        }
+        tempAns[ind][j * offset + 3] += summand;
+      }
+      tempAns[ind][j * offset + 3] /= equation[0];
+      tempAns[ind][j * offset + 4] = tempAns[ind][j * offset + 3] * h;
+    }
+  }
+
+  for (uint32_t j = start; j < end; ++j) {
+    for (uint16_t k = 0; k < numberOfSteps - 1; ++k) {
+      auto diminutive = tempAns[ind - k][j * offset + 4 + k];
+      auto deductible = tempAns[ind - 1 - k][j * offset + 4 + k];
+      tempAns[ind - k - 1][j * offset + 5 + k] = diminutive - deductible;
+    }
+  }
+}
+
+bool MultiStepSchemeSTL::pre_processing() {
+  internal_order_test();
+  // Init value for input and output
+  auto* tempEquation = reinterpret_cast<double*>(taskData->inputs[0]);
+  equation = std::vector<double>(tempEquation, tempEquation + taskData->inputs_count[0]);
+
+  auto* tempBoundaryConditions = reinterpret_cast<double*>(taskData->inputs[1]);
+  boundaryConditions = std::vector<double>(tempBoundaryConditions, tempBoundaryConditions + taskData->inputs_count[1]);
+
+  h = reinterpret_cast<double*>(taskData->inputs[2])[0];
+  end = reinterpret_cast<double*>(taskData->inputs[3])[0];
+  numThreads = std::thread::hardware_concurrency();
+
+  return true;
+}
+
+bool MultiStepSchemeSTL::validation() {
+  internal_order_test();
+  // Check count elements of output
+  auto tend = reinterpret_cast<double*>(taskData->inputs[3])[0];
+  auto tstart = reinterpret_cast<double*>(taskData->inputs[1])[0];
+  auto th = reinterpret_cast<double*>(taskData->inputs[2])[0];
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] + 2 && taskData->inputs_count[2] == 1 &&
+         taskData->inputs_count[3] == 1 && taskData->outputs_count[0] == (tend - tstart) / th + 1;
+}
+
+bool MultiStepSchemeSTL::run() {
+  internal_order_test();
+  res.clear();
+  res.reserve(static_cast<uint32_t>((end - boundaryConditions[0]) / h) + 2);
+  res.push_back(boundaryConditions);
+  RungeKuttaMethod();
+  AdamsMethod();
+  return true;
+}
+
+bool MultiStepSchemeSTL::post_processing() {
+  internal_order_test();
+  auto* out_ptr = reinterpret_cast<double*>(taskData->outputs[0]);
+
+  for (uint32_t i = 0; i < res.size(); ++i) {
+    out_ptr[i] = res[i][1];
+  }
+
+  return true;
+}
+
+void MultiStepSchemeSTL::RungeKuttaMethod() {
+  std::vector<std::thread> threads(numThreads);
+  uint32_t tempSize = 2 * (equation.size() - 3);
+  const uint32_t blockSize = (tempSize / 2 + 1) / numThreads;
+
+  for (uint32_t i = 0; i < _numberOfSteps - 1; ++i) {
+    std::vector<std::vector<double>> tempAns(4);
+    tempAns[0] = res[i];
+    tempAns[0].resize(tempSize + 1);
+
+    for (uint32_t j = 1; j < 4; ++j) {
+      tempAns[j].resize(tempSize + 1);
+      if (j != 3) {
+        tempAns[j][0] = tempAns[0][0] + h / 2;
+      } else {
+        tempAns[j][0] = tempAns[0][0] + h;
+      }
+    }
+
+    for (uint32_t j = 0; j < 4; ++j) {
+      uint32_t threadsCount = 0;
+      for (uint32_t p = 0; p < numThreads; ++p) {
+        uint32_t tstart = p * blockSize + 1;
+        uint32_t tend = (p == numThreads - 1) ? (tempSize / 2 + 1) : (tstart + blockSize);
+        if (tstart == tend) continue;
+        threads[threadsCount++] =
+            std::thread(CalculateTempAns, tstart, tend, tempSize, j, h, std::ref(equation), std::ref(tempAns));
+      }
+      for (uint32_t p = 0; p < threadsCount; ++p) {
+        threads[p].join();
+      }
+    }
+
+    std::vector<double> deltaSum(equation.size() - 3);
+
+    uint32_t threadsCount = 0;
+    for (uint32_t p = 0; p < numThreads; ++p) {
+      uint32_t tstart = p * blockSize + 1;
+      uint32_t tend = (p == numThreads - 1) ? (tempSize / 2 + 1) : (tstart + blockSize);
+      if (tstart == tend) continue;
+      threads[threadsCount++] =
+          std::thread(CalculateDeltaSum, tstart, tend, tempSize, std::ref(tempAns), std::ref(deltaSum));
+    }
+    for (uint32_t p = 0; p < threadsCount; ++p) {
+      threads[p].join();
+    }
+
+    std::vector<double> temp(res[i].size());
+    temp[0] = res[i][0] + h;
+
+    for (uint32_t j = 1; j < res[i].size(); ++j) {
+      temp[j] = res[i][j] + deltaSum[j - 1];
+    }
+
+    res.push_back(temp);
+  }
+}
+
+void MultiStepSchemeSTL::AdamsMethod() {
+  uint32_t resSize = res[0].size();
+  const uint32_t blockSize = (resSize - 1) / numThreads;
+  std::vector<std::thread> threads(numThreads);
+  std::vector<std::vector<double>> tempAns(4);
+  if (end - res[0][0] < 0) {
+    return;
+  }
+
+  uint32_t stepCount{4};
+  uint32_t offset{_numberOfSteps + 3};
+
+  for (uint32_t i = 0; i < _numberOfSteps; ++i) {
+    uint32_t ind = _numberOfSteps - i - 1;
+    tempAns[ind].resize((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = res[ind][0];
+    uint32_t threadsCount = 0;
+    for (uint32_t p = 0; p < numThreads; ++p) {
+      uint32_t tstart = p * blockSize;
+      uint32_t tend = (p == numThreads - 1) ? (resSize - 1) : (tstart + blockSize);
+      if (tstart == tend) continue;
+      threads[threadsCount++] = std::thread(CalculateTempAnsAdams, tstart, tend, stepCount, ind, offset, h, i, resSize,
+                                            std::ref(res), std::ref(equation), std::ref(tempAns));
+    }
+    for (uint32_t p = 0; p < threadsCount; ++p) {
+      threads[p].join();
+    }
+    stepCount++;
+  }
+  uint32_t ind = _numberOfSteps;
+
+  for (uint32_t i = ind; i < (end - res[0][0]) / h + 1; ++i) {
+    tempAns.emplace_back((equation.size() - 3) * offset + 1);
+    tempAns[ind][0] = tempAns[ind - 1][0] + h;
+
+    std::vector<double> newStrInAns;
+    newStrInAns.reserve(res[0].size());
+    newStrInAns.push_back(tempAns[ind - 1][0] + h);
+
+    for (uint32_t j = 0; j < res[0].size() - 1; ++j) {
+      double tempDelta{};
+      for (uint32_t k = 0; k < _numberOfSteps; ++k) {
+        tempDelta += _coefficients[k] * tempAns[ind - k - 1][j * offset + 4 + k];
+      }
+
+      tempAns[ind - 1][j * offset + 2] = tempDelta;
+      tempAns[ind][j * offset + 1] = tempDelta + tempAns[ind - 1][j * offset + 1];
+      newStrInAns.push_back(tempAns[ind][j * offset + 1]);
+    }
+    res.push_back(newStrInAns);
+    newStrInAns.clear();
+
+    uint32_t threadsCount = 0;
+    for (uint32_t p = 0; p < numThreads; ++p) {
+      uint32_t tstart = p * blockSize;
+      uint32_t tend = (p == numThreads - 1) ? (resSize - 1) : (tstart + blockSize);
+      if (tstart == tend) continue;
+      threads[threadsCount++] = std::thread(CalculateAdams, tstart, tend, resSize, h, i, ind, offset, _numberOfSteps,
+                                            std::ref(equation), std::ref(res), std::ref(tempAns));
+    }
+    for (uint32_t p = 0; p < threadsCount; ++p) {
+      threads[p].join();
+    }
+
+    tempAns.erase(tempAns.begin());
+  }
+}
+\end{lstlisting}
+
+\end{document}
