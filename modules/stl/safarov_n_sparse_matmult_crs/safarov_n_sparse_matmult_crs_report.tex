@@ -1,0 +1,1570 @@
+\documentclass[a4paper, 14pt]{article}
+
+\usepackage[english, russian]{babel}
+
+\usepackage{tocloft}
+\usepackage{tabularray}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{indentfirst}
+\usepackage{mathtext}
+\frenchspacing
+
+\usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
+\usepackage{icomma}
+
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\newcommand{\n}{\par}
+
+%%% Оформление страницы
+\usepackage{extsizes}     % Возможность сделать 14-й шрифт
+\usepackage{geometry}     % Простой способ задавать поля
+\usepackage{setspace}     % Интерлиньяж
+\usepackage{enumitem}     % Настройка окружений itemize и enumerate
+\setlist{leftmargin=25pt} % Отступы в itemize и enumerate
+
+\geometry{top=25mm}    % Поля сверху страницы
+\geometry{bottom=30mm} % Поля снизу страницы
+\geometry{left=20mm}   % Поля слева страницы
+\geometry{right=20mm}  % Поля справа страницы
+
+\setlength\parindent{15pt}        % Устанавливает длину красной строки 15pt
+\linespread{1.3}                  % Коэффициент межстрочного интервала
+\setlength{\parskip}{0.5em}      % Вертикальный интервал между абзацами
+%\setcounter{secnumdepth}{0}      % Отключение нумерации разделов
+%\setcounter{section}{-1}         % Нумерация секций с нуля
+\usepackage{multicol}			  % Для текста в нескольких колонках
+\usepackage{soulutf8}             % Модификаторы начертания
+\begin{document}
+	\thispagestyle{empty}
+	\begin{center}
+		
+		МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\n
+		Федеральное государственное автономное образовательное учреждение высшего образования\n
+		\textbf{«Национальный исследовательский Нижегородский государственный университет им. Н. И. Лобачевского»}\n
+		Институт информационных технологий, математики и механики
+		\vspace{1cm}
+		
+		ОТЧЁТ ПО ЛАБОРАТОРНЫМ РАБОТАМ
+		
+		ПО ДИСЦИПЛИНЕ
+		
+		\textbf{<<Параллельное программирование для систем с общей памятью>>}
+		
+		НА ТЕМУ
+		
+		\textbf{<<Умножение разреженных матриц. Элементы типа double. Формат хранения матрицы – строковый (CRS)>>}
+	\end{center}
+	\vspace{0.3cm}
+	\begin{flushright}
+		
+		\textbf{Выполнил:}
+		
+		студент 3-го курса 
+		
+		гр. 3821Б1ФИ3 | МОСТ
+		
+		Сафаров Нурлан М.
+	\end{flushright}
+	
+	\begin{flushright}
+		\textbf{Проверил:}
+		
+		аспирант
+		
+		Нестеров А. Ю.
+	\end{flushright}
+	
+	\begin{center}
+		\vfill
+		Нижний Новгород
+		
+		2024
+	\end{center}
+	\newpage
+	\begin{center}\tableofcontents\end{center}
+	\newpage
+	\section*{\centering \textbf{Введение}}
+	\addcontentsline{toc}{section}{Введение}
+	
+	В современном мире, где объемы данных постоянно растут, параллельные вычисления играют ключевую роль в обеспечении высокой производительности и эффективности алгоритмов обработки информации. Одним из важных направлений параллельного программирования является разработка алгоритмов для работы с разреженными матрицами, которые часто встречаются в прикладных областях, таких как машинное обучение, численное моделирование и анализ данных.
+	
+	В данном контексте, использование библиотек и инструментов для параллельных вычислений, таких как OpenMP, TBB (Threading Building Blocks) и стандартная библиотека потоков (STL), становится неотъемлемой частью разработки высокопроизводительных приложений. Эти инструменты предоставляют программистам удобные средства для создания параллельных программ, позволяя распределить вычислительную нагрузку на множество потоков и ядер процессора.
+	
+	\newpage
+	\section*{\centering Постановка задачи}
+	\addcontentsline{toc}{section}{Постановка задачи}
+	\textbf{Цель работы:} реализовать и провести сравнительный анализ эффективности умножения разреженных матриц в формате CRS с использованием различных подходов к реализации. В данном контексте исследуются четыре варианта: последовательная реализация, параллельное выполнение с использованием OpenMP, TBB (Threading Building Blocks) и стандартной библиотеки потоков (STL). 
+	
+	\textbf{Задачи работы:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item разработать последовательную версию алгоритма умножения разреженных матриц;
+		\item реализовать параллельную версию алгоритма с использованием OpenMP для распараллеливания вычислений на несколько потоков;
+		\item создать параллельную версию алгоритма с помощью TBB (Threading Building Blocks) для эффективного управления потоками и задачами;
+		\item разработать параллельную версию алгоритма с использованием стандартной библиотеки потоков (STL) для реализации параллельных вычислений;
+		\item провести сравнительный анализ времени выполнения каждой версии алгоритма на различных наборах данных с разными характеристиками разреженности матриц.
+	\end{itemize}
+	
+	\textbf{Использованное для реализации данных л/р оборудование и программное обеспечение:} 
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Тип оборудования: ноутбук
+		\item ОС: Windows 11 Домашняя
+		\item Модель процессора: 12th Gen Intel(R) Core(TM) i7-12650H (2.70 GHz)
+		\item Память: 16 ГБ (RAM) | 512 ГБ (ROM)
+		\item Графический ускоритель: GeForce RTX 3060 для ноутбуков
+		\item IDE: Visual Studio 2019
+		\item Язык программирования: C/C++
+	\end{itemize}
+	
+	
+	\newpage
+	\section*{\centering Описание алгоритма}
+	\addcontentsline{toc}{section}{Описание алгоритма}
+	\textbf{Последовательная версия:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item в данной версии алгоритма умножения разреженных матриц используется классический подход, основанный на структуре хранения разреженных матриц в формате CRS (Compressed Row Storage);
+		\item алгоритм проходит по каждой строке исходной матрицы и вычисляет соответствующие элементы результирующей матрицы путем скалярного произведения строк и столбцов;
+		\item результат сохраняется в виде разреженной матрицы в формате CRS.
+	\end{itemize}
+	
+	\textbf{Параллельная версия с использованием OpenMP:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item в этой версии алгоритма используется директива OpenMP <<parallel for>>, чтобы распараллелить вычисления цикла по строкам исходной матрицы;
+		\item каждый поток выполняет вычисления для своего диапазона строк, что позволяет эффективно использовать многопоточность для ускорения процесса умножения матриц.
+	\end{itemize}
+	
+	\textbf{Параллельная версия с использованием TBB:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item в данной версии алгоритма используется библиотека TBB для создания и управления потоками;
+		\item параллельность реализуется с помощью <<tbb::parallel\_for>>, которая автоматически распределяет выполнение цикла по разным потокам;
+		\item каждый поток выполняет вычисления для своего диапазона строк матрицы, что позволяет эффективно использовать ресурсы многоядерных систем.
+	\end{itemize}
+	
+	\textbf{Параллельная версия с использованием стандартной библиотеки потоков (STL):}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item в этой версии алгоритма используются стандартные средства C++ для создания и управления потоками;
+		\item вычисления для каждой строки матрицы параллельно выполняются в отдельных потоках с помощью класса <<std::thread>>;
+		\item после завершения вычислений, результаты объединяются в единую результирующую матрицу;
+	\end{itemize}
+	
+	
+	\newpage
+	\subsection*{\centering Описание программ}
+	\addcontentsline{toc}{section}{Описание программ}
+	Мы реализовали четыре версии умножения разреженных матриц: последовательную, параллельную с использованием OpenMP, параллельную с использованием TBB (Threading Building Blocks) и параллельную с использованием стандартной библиотеки потоков (STL). В каждой версии программы основное действие выполняется в методе run(), который является центральной частью алгоритма.
+	
+	Последовательная версия выполняет умножение матриц последовательно, вычисляя каждый элемент результирующей матрицы по формуле и сохраняя его в CRS формате.
+	
+	В параллельной версии с использованием OpenMP цикл по строкам исходной матрицы распараллеливается с помощью директивы <<\#pragma omp parallel for>>, что позволяет эффективно использовать доступные потоки для вычислений.
+	
+	Параллельная версия с использованием TBB использует функцию <<tbb::parallel\_for()>>, которая автоматически распределяет вычисления между потоками, обеспечивая эффективное использование многоядерных систем.
+	
+	В параллельной версии с использованием стандартной библиотеки потоков каждая строка матрицы обрабатывается в отдельном потоке с помощью класса <<std::thread>>, после чего результаты объединяются в единую результирующую матрицу.
+	
+	Реализация метода run() в последовательной версии программы
+	\begin{verbatim}
+		bool SparseMatrixMultiplicationCRS::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			for (int rOne = 0; rOne < X->numberOfRows; rOne++) {
+				for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+					int firstCurrentPointer = X->pointers[rOne];
+					int secondCurrentPointer = Y->pointers[rTwo];
+					int firstEndPointer = X->pointers[rOne + 1] - 1;
+					int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+					double v = 0;
+					
+					while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+						if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+							if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+								v = v + (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+								secondCurrentPointer++;
+								firstCurrentPointer++;
+							} else {
+								firstCurrentPointer++;
+							}
+						} else {
+							secondCurrentPointer++;
+						}
+					}
+					if (v != 0) {
+						localValues[rOne].push_back(v);
+						localColumnIndexes[rOne].push_back(rTwo);
+					}
+				}
+			}
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Реализация метода run() в параллельной (OMP) версии программы
+	\begin{verbatim}
+		bool SparseMatrixMultiplicationCRS_OMP::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			omp_set_num_threads(4);
+			#pragma omp parallel for
+			for (int rOne = 0; rOne < X->numberOfRows; rOne++) {
+				for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+					int firstCurrentPointer = X->pointers[rOne];
+					int secondCurrentPointer = Y->pointers[rTwo];
+					int firstEndPointer = X->pointers[rOne + 1] - 1;
+					int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+					double v = 0;
+					
+					while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+						if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+							if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+								v = v + (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+								secondCurrentPointer++;
+								firstCurrentPointer++;
+							} else {
+								firstCurrentPointer++;
+							}
+						} else {
+							secondCurrentPointer++;
+						}
+					}
+					if (v != 0) {
+						localValues[rOne].push_back(v);
+						localColumnIndexes[rOne].push_back(rTwo);
+					}
+				}
+			}
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Реализация метода run() в параллельной (TBB) версии программы
+	\begin{verbatim}
+		bool SparseMatrixMultiplicationCRS_TBB::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			int sizePart = 10;
+			tbb::parallel_for(tbb::blocked_range<int>(0, X->numberOfRows, sizePart), [&](tbb::blocked_range<int> r) {
+				for (int rOne = r.begin(); rOne != r.end(); ++rOne) {
+					for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+						int firstCurrentPointer = X->pointers[rOne];
+						int secondCurrentPointer = Y->pointers[rTwo];
+						int firstEndPointer = X->pointers[rOne + 1] - 1;
+						int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+						double v = 0;
+						
+						while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+							if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+								if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+									v += (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+									secondCurrentPointer++;
+									firstCurrentPointer++;
+								} else {
+									firstCurrentPointer++;
+								}
+							} else {
+								secondCurrentPointer++;
+							}
+						}
+						if (v != 0) {
+							localValues[rOne].push_back(v);
+							localColumnIndexes[rOne].push_back(rTwo);
+						}
+					}
+				}
+			});
+			
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter += localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Реализация метода run() в параллельной (STL) версии программы
+	\begin{verbatim}
+		bool SparseMatrixMultiplicationCRS_STL::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			const int num_threads = 4;
+			std::vector<std::thread> threads(num_threads);
+			
+			for (int i = 0; i < num_threads; ++i) {
+				threads[i] = std::thread([&, i]() {
+					for (int rOne = i; rOne < X->numberOfRows; rOne += num_threads) {
+						for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+							int firstCurrentPointer = X->pointers[rOne];
+							int secondCurrentPointer = Y->pointers[rTwo];
+							int firstEndPointer = X->pointers[rOne + 1] - 1;
+							int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+							double v = 0;
+							
+							while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+								if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+									if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+										v += X->values[firstCurrentPointer] * Y->values[secondCurrentPointer];
+										secondCurrentPointer++;
+										firstCurrentPointer++;
+									} else {
+										firstCurrentPointer++;
+									}
+								} else {
+									secondCurrentPointer++;
+								}
+							}
+							if (v != 0) {
+								localValues[rOne].push_back(v);
+								localColumnIndexes[rOne].push_back(rTwo);
+							}
+						}
+					}
+				});
+			}
+			
+			for (auto& thread : threads) {
+				thread.join();
+			}
+			
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	\newpage
+	\section*{\centering Эксперименты и их результаты}
+	\addcontentsline{toc}{section}{Эксперименты и их результаты}
+	
+	Во всех проведённых мной экспериментов была использована функция \textbf{createRandomMatrix()}. Она создаёт случайную матрицу заданного размера rows $\times$ columns, где каждый элемент матрицы заполняется случайным образом с вероятностью perc.
+	Реализация метода createRandomMatrix()
+	\begin{verbatim}
+		std::vector<std::vector<double>> createRandomMatrix(int columns, int rows, double perc) {
+			if (perc < 0 || perc > 1) {
+				throw std::runtime_error("Wrong density. \n");
+			}
+			std::random_device mydev;
+			std::vector<std::vector<double>> result = fillTheMatrixWithZeros(columns, rows);
+			std::mt19937 gen(mydev());
+			std::uniform_real_distribution<double> genP{0.0, 1.0};
+			std::uniform_real_distribution<double> genVal{0.0, 25.0};
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < columns; c++) {
+					if (genP(gen) <= perc) {
+						result[r][c] = genVal(gen);
+					}
+				}
+			}
+			return result;
+		}
+	\end{verbatim}
+	
+	В ходе проведения эксперимента были выполнены пять тестов, включающих в себя матрицы разных размерностей. Количество потоков --- 4.  Результаты данных тестов представлены в след. таблице.
+	
+	\begin{center}
+		\begin{tabular}{ ||c | c | c ||  }
+			\hline Версия алгоритма & pipeline (в сек.) & task (в сек.)\\ 
+			\hline Последовательная & 8.1262 & 8.0358 \\
+			\hline OpenMP & 3.7390 & 3.6821 \\
+			\hline TBB & 3.6994 & 3.6170 \\ 
+			\hline STL & 3.8107 & 3.7997 \\ 
+			\hline
+		\end{tabular}\\[5mm]
+	\end{center}
+	
+	\textbf{Анализ полученных данных.}
+	
+	\noindent Из представленных данных видно, что параллельные версии алгоритмов (OpenMP, TBB и STL) значительно превосходят последовательную версию по времени выполнения. Наименьшее время выполнения достигнуто с использованием TBB, а затем с небольшим отставанием идут версии с использованием OpenMP и STL. Однако различия во времени выполнения между этими тремя параллельными версиями незначительны. Это говорит о том, что все три библиотеки эффективно распределяют нагрузку между потоками и достигают схожих результатов.
+	
+	\textbf{Выводы:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item параллельные версии алгоритмов, реализованные с использованием библиотек OpenMP, TBB и STL, значительно превосходят последовательную версию по времени выполнения;
+		\item наименьшее время выполнения достигнуто при использовании TBB, что указывает на эффективность данной библиотеки при распараллеливании вычислений;
+		\item версии алгоритмов, использующие OpenMP и STL, также показывают хорошие результаты, хотя незначительно отстают от версии с использованием TBB;
+		\item полученные результаты подтверждают эффективность параллельного программирования с использованием современных библиотек, что позволяет ускорить выполнение вычислительных задач на многоядерных системах.
+	\end{itemize}
+	
+	\newpage
+	\section*{\centering Заключение}
+	\addcontentsline{toc}{section}{Заключение}
+	
+	Эти л/р были захватывающим погружением в мир параллельного программирования. Работая над четырьмя версиями алгоритма умножения разреженных матриц с использованием различных технологий, я получил богатый опыт в области параллельного программирования.
+	
+	Изучение каждой из технологий --- OpenMP, TBB и STL позволило мне лучше понять их особенности, преимущества и недостатки. Разработка и сравнение каждой версии алгоритма не только помогли мне углубить свои знания в области оптимизации производительности, но и дала понимание о том, как правильно выбирать подходящую технологию для конкретной задачи.
+	
+	Одной из ключевых целей было выполнение задачи с максимальной эффективностью при использовании каждой технологии. Полученные результаты показывают, что задача выполнена успешно: все реализации алгоритма дали значительное ускорение по сравнению с последовательной версией. Особенно важно отметить, что версия, основанная на TBB, продемонстрировала наилучшие результаты по времени выполнения, что говорит о ее высокой эффективности при распараллеливании задач.
+	
+	Этот проект дал мне ценный опыт и навыки в области параллельного программирования, а также позволил глубже понять, как использование правильных инструментов и технологий может значительно улучшить производительность и эффективность программного обеспечения.
+	
+	\newpage
+	\section*{\centering Список литературы}
+	\addcontentsline{toc}{section}{Список литературы}
+	\begin{enumerate}[label={[\arabic*]}]
+		\item Попов, А. Н. (2020). Параллельные алгоритмы в вычислительных системах. Москва: Издательство Технической Литературы
+		\item Шастун, А. Е., \& Попов, А. Н. (2019). Эффективность алгоритмов сортировки в распределенных вычислительных средах. Журнал параллельных вычислений, 15(3), 112-127
+		\item Лекции доцента кафедры ВВиСП ННГУ им. Н. И. Лобачевского, к.т.н. Сысоева А. В. по курсу <<Параллельное программирование для систем с общей памятью>>
+		\item Матвиенко, С. Д., \& Новиков, К. Ф. (2018). Практическое руководство по алгоритмам и структурам данных. Нью-Йорк: Академическое издательство.
+		\item Сафаров, Н. М. safarov-nm (GitHub Repository). URL:\href{https://github.com/safarov-nm}{https://github.com/safarov-nm}
+	\end{enumerate}
+	
+	\newpage
+	\section*{\centering Приложение}
+	\addcontentsline{toc}{section}{Приложение}
+	Файл sparse\_matmult\_crs.cpp
+	\begin{verbatim}
+		// Copyright 2024 Safarov Nurlan
+		#include "seq/safarov_n_sparse_matmult_crs/include/sparse_matmult_crs.hpp"
+		
+		#include <algorithm>
+		#include <cmath>
+		#include <utility>
+		#include <vector>
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows, const std::vector<double>& _values,
+		const std::vector<int>& _columnIndexes, const std::vector<int>& _pointers)
+		: numberOfColumns(_numberOfColumns),
+		numberOfRows(_numberOfRows),
+		values(_values),
+		columnIndexes(_columnIndexes),
+		pointers(_pointers) {}
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows) {
+			numberOfColumns = _numberOfColumns;
+			numberOfRows = _numberOfRows;
+		}
+		
+		SparseMatrixCRS::SparseMatrixCRS(std::vector<std::vector<double>> matrix) {
+			int indexCounter = 0;
+			numberOfRows = matrix.size();
+			numberOfColumns = matrix[0].size();
+			pointers.push_back(indexCounter);
+			for (int r = 0; r < numberOfRows; r++) {
+				for (int c = 0; c < numberOfColumns; c++) {
+					if (matrix[r][c] != 0) {
+						values.push_back(matrix[r][c]);
+						indexCounter++;
+						columnIndexes.push_back(c);
+					}
+				}
+				pointers.push_back(indexCounter);
+			}
+		}
+		
+		SparseMatrixCRS sparseMatrixTransposeCRS(const SparseMatrixCRS& object) {
+			SparseMatrixCRS matrix;
+			std::vector<std::vector<int>> locCVec(object.numberOfColumns);
+			std::vector<std::vector<double>> locVecVal(object.numberOfColumns);
+			matrix.numberOfColumns = object.numberOfRows;
+			int elementCounter = 0;
+			matrix.numberOfRows = object.numberOfColumns;
+			
+			for (int r = 0; r < object.numberOfRows; r++) {
+				for (int index = object.pointers[r]; index < object.pointers[r + 1]; index++) {
+					int cIndex = object.columnIndexes[index];
+					locCVec[cIndex].push_back(r);
+					locVecVal[cIndex].push_back(object.values[index]);
+				}
+			}
+			matrix.pointers.push_back(elementCounter);
+			for (int c = 0; c < object.numberOfColumns; c++) {
+				for (size_t ktmp = 0; ktmp < locCVec[c].size(); ktmp++) {
+					matrix.columnIndexes.push_back(locCVec[c][ktmp]);
+					matrix.values.push_back(locVecVal[c][ktmp]);
+				}
+				elementCounter += locCVec[c].size();
+				matrix.pointers.push_back(elementCounter);
+			}
+			return matrix;
+		}
+		
+		bool SparseMatrixCRS::operator==(const SparseMatrixCRS& matrix) const {
+			return (values == matrix.values) && (numberOfColumns == matrix.numberOfColumns) &&
+			(columnIndexes == matrix.columnIndexes) && (numberOfRows == matrix.numberOfRows) &&
+			(pointers == matrix.pointers);
+		}
+		
+		std::vector<std::vector<double>> fillTheMatrixWithZeros(int columns, int rows) {
+			std::vector<std::vector<double>> result(rows);
+			for (int m = 0; m < rows; m++) {
+				for (int n = 0; n < columns; n++) {
+					result[m].push_back(0);
+				}
+			}
+			return result;
+		}
+		
+		std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> A,
+		std::vector<std::vector<double>> B) {
+			int p = B[0].size();
+			int q = A.size();
+			std::vector<std::vector<double>> resultMatrix = fillTheMatrixWithZeros(p, q);
+			for (int rr = 0; rr < q; rr++) {
+				for (int cc = 0; cc < p; cc++) {
+					resultMatrix[rr][cc] = 0;
+					for (size_t k = 0; k < A[0].size(); k++) {
+						resultMatrix[rr][cc] += A[rr][k] * B[k][cc];
+					}
+				}
+			}
+			return resultMatrix;
+		}
+		
+		std::vector<std::vector<double>> createRandomMatrix(int columns, int rows, double perc) {
+			if (perc < 0 || perc > 1) {
+				throw std::runtime_error("Wrong density. \n");
+			}
+			std::random_device mydev;
+			std::vector<std::vector<double>> result = fillTheMatrixWithZeros(columns, rows);
+			std::mt19937 gen(mydev());
+			std::uniform_real_distribution<double> genP{0.0, 1.0};
+			std::uniform_real_distribution<double> genVal{0.0, 25.0};
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < columns; c++) {
+					if (genP(gen) <= perc) {
+						result[r][c] = genVal(gen);
+					}
+				}
+			}
+			return result;
+		}
+		
+		bool verifyCRSAttributes(const SparseMatrixCRS& object) {
+			int nonZeroCount = object.values.size();
+			auto check = size_t(nonZeroCount);
+			
+			if (object.pointers.size() != size_t(object.numberOfRows + 1)) {
+				return false;
+			}
+			if (object.pointers[0] != 0) {
+				return false;
+			}
+			if (object.values.size() != check || object.columnIndexes.size() != check ||
+			object.pointers[object.numberOfRows] != nonZeroCount) {
+				return false;
+			}
+			
+			for (int i = 0; i < nonZeroCount; ++i) {
+				if (object.columnIndexes[i] < 0 || object.columnIndexes[i] >= object.numberOfColumns) {
+					return false;
+				}
+			}
+			
+			for (int j = 1; j <= object.numberOfRows; ++j) {
+				if (object.pointers[j - 1] > object.pointers[j]) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS::validation() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			if (X == nullptr || Y == nullptr || Z == nullptr) {
+				return false;
+			}
+			
+			if (!verifyCRSAttributes(*X) || !verifyCRSAttributes(*Y)) {
+				return false;
+			}
+			
+			if (taskData->inputs.size() != 2 || taskData->outputs.size() != 1 || !taskData->inputs_count.empty() ||
+			!taskData->outputs_count.empty()) {
+				return false;
+			}
+			
+			if (taskData->inputs[0] == nullptr || taskData->inputs[1] == nullptr || taskData->outputs[0] == nullptr) {
+				return false;
+			}
+			
+			if (X->numberOfColumns != Y->numberOfRows) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS::pre_processing() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			*Y = sparseMatrixTransposeCRS(*Y);
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			for (int rOne = 0; rOne < X->numberOfRows; rOne++) {
+				for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+					int firstCurrentPointer = X->pointers[rOne];
+					int secondCurrentPointer = Y->pointers[rTwo];
+					int firstEndPointer = X->pointers[rOne + 1] - 1;
+					int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+					double v = 0;
+					
+					while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+						if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+							if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+								v = v + (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+								secondCurrentPointer++;
+								firstCurrentPointer++;
+							} else {
+								firstCurrentPointer++;
+							}
+						} else {
+							secondCurrentPointer++;
+						}
+					}
+					if (v != 0) {
+						localValues[rOne].push_back(v);
+						localColumnIndexes[rOne].push_back(rTwo);
+					}
+				}
+			}
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS::post_processing() {
+			internal_order_test();
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Файл sparse\_matmult\_crs\_omp.cpp
+	\begin{verbatim}
+		// Copyright 2024 Safarov Nurlan
+		#include "omp/safarov_n_sparse_matmult_crs/include/sparse_matmult_crs_omp.hpp"
+		
+		#include <omp.h>
+		
+		#include <algorithm>
+		#include <cmath>
+		#include <utility>
+		#include <vector>
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows, const std::vector<double>& _values,
+		const std::vector<int>& _columnIndexes, const std::vector<int>& _pointers)
+		: numberOfColumns(_numberOfColumns),
+		numberOfRows(_numberOfRows),
+		values(_values),
+		columnIndexes(_columnIndexes),
+		pointers(_pointers) {}
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows) {
+			numberOfColumns = _numberOfColumns;
+			numberOfRows = _numberOfRows;
+		}
+		
+		SparseMatrixCRS::SparseMatrixCRS(std::vector<std::vector<double>> matrix) {
+			int indexCounter = 0;
+			numberOfRows = matrix.size();
+			numberOfColumns = matrix[0].size();
+			pointers.push_back(indexCounter);
+			for (int r = 0; r < numberOfRows; r++) {
+				for (int c = 0; c < numberOfColumns; c++) {
+					if (matrix[r][c] != 0) {
+						values.push_back(matrix[r][c]);
+						indexCounter++;
+						columnIndexes.push_back(c);
+					}
+				}
+				pointers.push_back(indexCounter);
+			}
+		}
+		
+		SparseMatrixCRS sparseMatrixTransposeCRS(const SparseMatrixCRS& object) {
+			SparseMatrixCRS matrix;
+			std::vector<std::vector<int>> locCVec(object.numberOfColumns);
+			std::vector<std::vector<double>> locVecVal(object.numberOfColumns);
+			matrix.numberOfColumns = object.numberOfRows;
+			int elementCounter = 0;
+			matrix.numberOfRows = object.numberOfColumns;
+			
+			for (int r = 0; r < object.numberOfRows; r++) {
+				for (int index = object.pointers[r]; index < object.pointers[r + 1]; index++) {
+					int cIndex = object.columnIndexes[index];
+					locCVec[cIndex].push_back(r);
+					locVecVal[cIndex].push_back(object.values[index]);
+				}
+			}
+			matrix.pointers.push_back(elementCounter);
+			for (int c = 0; c < object.numberOfColumns; c++) {
+				for (size_t ktmp = 0; ktmp < locCVec[c].size(); ktmp++) {
+					matrix.columnIndexes.push_back(locCVec[c][ktmp]);
+					matrix.values.push_back(locVecVal[c][ktmp]);
+				}
+				elementCounter += locCVec[c].size();
+				matrix.pointers.push_back(elementCounter);
+			}
+			return matrix;
+		}
+		
+		bool SparseMatrixCRS::operator==(const SparseMatrixCRS& matrix) const {
+			return (values == matrix.values) && (numberOfColumns == matrix.numberOfColumns) &&
+			(columnIndexes == matrix.columnIndexes) && (numberOfRows == matrix.numberOfRows) &&
+			(pointers == matrix.pointers);
+		}
+		
+		std::vector<std::vector<double>> fillTheMatrixWithZeros(int columns, int rows) {
+			std::vector<std::vector<double>> result(rows);
+			for (int m = 0; m < rows; m++) {
+				for (int n = 0; n < columns; n++) {
+					result[m].push_back(0);
+				}
+			}
+			return result;
+		}
+		
+		std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> A,
+		std::vector<std::vector<double>> B) {
+			int p = B[0].size();
+			int q = A.size();
+			std::vector<std::vector<double>> resultMatrix = fillTheMatrixWithZeros(p, q);
+			for (int rr = 0; rr < q; rr++) {
+				for (int cc = 0; cc < p; cc++) {
+					resultMatrix[rr][cc] = 0;
+					for (size_t k = 0; k < A[0].size(); k++) {
+						resultMatrix[rr][cc] += A[rr][k] * B[k][cc];
+					}
+				}
+			}
+			return resultMatrix;
+		}
+		
+		std::vector<std::vector<double>> createRandomMatrix(int columns, int rows, double perc) {
+			if (perc < 0 || perc > 1) {
+				throw std::runtime_error("Wrong density. \n");
+			}
+			std::random_device mydev;
+			std::vector<std::vector<double>> result = fillTheMatrixWithZeros(columns, rows);
+			std::mt19937 gen(mydev());
+			std::uniform_real_distribution<double> genP{0.0, 1.0};
+			std::uniform_real_distribution<double> genVal{0.0, 25.0};
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < columns; c++) {
+					if (genP(gen) <= perc) {
+						result[r][c] = genVal(gen);
+					}
+				}
+			}
+			return result;
+		}
+		
+		bool verifyCRSAttributes(const SparseMatrixCRS& object) {
+			int nonZeroCount = object.values.size();
+			auto check = size_t(nonZeroCount);
+			
+			if (object.pointers.size() != size_t(object.numberOfRows + 1)) {
+				return false;
+			}
+			if (object.pointers[0] != 0) {
+				return false;
+			}
+			if (object.values.size() != check || object.columnIndexes.size() != check ||
+			object.pointers[object.numberOfRows] != nonZeroCount) {
+				return false;
+			}
+			
+			for (int i = 0; i < nonZeroCount; ++i) {
+				if (object.columnIndexes[i] < 0 || object.columnIndexes[i] >= object.numberOfColumns) {
+					return false;
+				}
+			}
+			
+			for (int j = 1; j <= object.numberOfRows; ++j) {
+				if (object.pointers[j - 1] > object.pointers[j]) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_OMP::validation() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			if (X == nullptr || Y == nullptr || Z == nullptr) {
+				return false;
+			}
+			
+			if (!verifyCRSAttributes(*X) || !verifyCRSAttributes(*Y)) {
+				return false;
+			}
+			
+			if (taskData->inputs.size() != 2 || taskData->outputs.size() != 1 || !taskData->inputs_count.empty() ||
+			!taskData->outputs_count.empty()) {
+				return false;
+			}
+			
+			if (taskData->inputs[0] == nullptr || taskData->inputs[1] == nullptr || taskData->outputs[0] == nullptr) {
+				return false;
+			}
+			
+			if (X->numberOfColumns != Y->numberOfRows) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_OMP::pre_processing() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			*Y = sparseMatrixTransposeCRS(*Y);
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_OMP::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			omp_set_num_threads(4);
+			#pragma omp parallel for
+			for (int rOne = 0; rOne < X->numberOfRows; rOne++) {
+				for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+					int firstCurrentPointer = X->pointers[rOne];
+					int secondCurrentPointer = Y->pointers[rTwo];
+					int firstEndPointer = X->pointers[rOne + 1] - 1;
+					int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+					double v = 0;
+					
+					while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+						if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+							if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+								v = v + (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+								secondCurrentPointer++;
+								firstCurrentPointer++;
+							} else {
+								firstCurrentPointer++;
+							}
+						} else {
+							secondCurrentPointer++;
+						}
+					}
+					if (v != 0) {
+						localValues[rOne].push_back(v);
+						localColumnIndexes[rOne].push_back(rTwo);
+					}
+				}
+			}
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_OMP::post_processing() {
+			internal_order_test();
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Файл sparse\_matmult\_crs\_tbb.cpp
+	\begin{verbatim}
+		// Copyright 2024 Safarov Nurlan
+		#include "tbb/safarov_n_sparse_matmult_crs/include/sparse_matmult_crs_tbb.hpp"
+		
+		#include <tbb/tbb.h>
+		
+		#include <algorithm>
+		#include <cmath>
+		#include <utility>
+		#include <vector>
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows, const std::vector<double>& _values,
+		const std::vector<int>& _columnIndexes, const std::vector<int>& _pointers)
+		: numberOfColumns(_numberOfColumns),
+		numberOfRows(_numberOfRows),
+		values(_values),
+		columnIndexes(_columnIndexes),
+		pointers(_pointers) {}
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows) {
+			numberOfColumns = _numberOfColumns;
+			numberOfRows = _numberOfRows;
+		}
+		
+		SparseMatrixCRS::SparseMatrixCRS(std::vector<std::vector<double>> matrix) {
+			int indexCounter = 0;
+			numberOfRows = matrix.size();
+			numberOfColumns = matrix[0].size();
+			pointers.push_back(indexCounter);
+			for (int r = 0; r < numberOfRows; r++) {
+				for (int c = 0; c < numberOfColumns; c++) {
+					if (matrix[r][c] != 0) {
+						values.push_back(matrix[r][c]);
+						indexCounter++;
+						columnIndexes.push_back(c);
+					}
+				}
+				pointers.push_back(indexCounter);
+			}
+		}
+		
+		SparseMatrixCRS sparseMatrixTransposeCRS(const SparseMatrixCRS& object) {
+			SparseMatrixCRS matrix;
+			std::vector<std::vector<int>> locCVec(object.numberOfColumns);
+			std::vector<std::vector<double>> locVecVal(object.numberOfColumns);
+			matrix.numberOfColumns = object.numberOfRows;
+			int elementCounter = 0;
+			matrix.numberOfRows = object.numberOfColumns;
+			
+			for (int r = 0; r < object.numberOfRows; r++) {
+				for (int index = object.pointers[r]; index < object.pointers[r + 1]; index++) {
+					int cIndex = object.columnIndexes[index];
+					locCVec[cIndex].push_back(r);
+					locVecVal[cIndex].push_back(object.values[index]);
+				}
+			}
+			matrix.pointers.push_back(elementCounter);
+			for (int c = 0; c < object.numberOfColumns; c++) {
+				for (size_t ktmp = 0; ktmp < locCVec[c].size(); ktmp++) {
+					matrix.columnIndexes.push_back(locCVec[c][ktmp]);
+					matrix.values.push_back(locVecVal[c][ktmp]);
+				}
+				elementCounter += locCVec[c].size();
+				matrix.pointers.push_back(elementCounter);
+			}
+			return matrix;
+		}
+		
+		bool SparseMatrixCRS::operator==(const SparseMatrixCRS& matrix) const {
+			return (values == matrix.values) && (numberOfColumns == matrix.numberOfColumns) &&
+			(columnIndexes == matrix.columnIndexes) && (numberOfRows == matrix.numberOfRows) &&
+			(pointers == matrix.pointers);
+		}
+		
+		std::vector<std::vector<double>> fillTheMatrixWithZeros(int columns, int rows) {
+			std::vector<std::vector<double>> result(rows);
+			for (int m = 0; m < rows; m++) {
+				for (int n = 0; n < columns; n++) {
+					result[m].push_back(0);
+				}
+			}
+			return result;
+		}
+		
+		std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> A,
+		std::vector<std::vector<double>> B) {
+			int p = B[0].size();
+			int q = A.size();
+			std::vector<std::vector<double>> resultMatrix = fillTheMatrixWithZeros(p, q);
+			for (int rr = 0; rr < q; rr++) {
+				for (int cc = 0; cc < p; cc++) {
+					resultMatrix[rr][cc] = 0;
+					for (size_t k = 0; k < A[0].size(); k++) {
+						resultMatrix[rr][cc] += A[rr][k] * B[k][cc];
+					}
+				}
+			}
+			return resultMatrix;
+		}
+		
+		std::vector<std::vector<double>> createRandomMatrix(int columns, int rows, double perc) {
+			if (perc < 0 || perc > 1) {
+				throw std::runtime_error("Wrong density. \n");
+			}
+			std::random_device mydev;
+			std::vector<std::vector<double>> result = fillTheMatrixWithZeros(columns, rows);
+			std::mt19937 gen(mydev());
+			std::uniform_real_distribution<double> genP{0.0, 1.0};
+			std::uniform_real_distribution<double> genVal{0.0, 25.0};
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < columns; c++) {
+					if (genP(gen) <= perc) {
+						result[r][c] = genVal(gen);
+					}
+				}
+			}
+			return result;
+		}
+		
+		bool verifyCRSAttributes(const SparseMatrixCRS& object) {
+			int nonZeroCount = object.values.size();
+			auto check = size_t(nonZeroCount);
+			
+			if (object.pointers.size() != size_t(object.numberOfRows + 1)) {
+				return false;
+			}
+			if (object.pointers[0] != 0) {
+				return false;
+			}
+			if (object.values.size() != check || object.columnIndexes.size() != check ||
+			object.pointers[object.numberOfRows] != nonZeroCount) {
+				return false;
+			}
+			
+			for (int i = 0; i < nonZeroCount; ++i) {
+				if (object.columnIndexes[i] < 0 || object.columnIndexes[i] >= object.numberOfColumns) {
+					return false;
+				}
+			}
+			
+			for (int j = 1; j <= object.numberOfRows; ++j) {
+				if (object.pointers[j - 1] > object.pointers[j]) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_TBB::validation() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			if (X == nullptr || Y == nullptr || Z == nullptr) {
+				return false;
+			}
+			
+			if (!verifyCRSAttributes(*X) || !verifyCRSAttributes(*Y)) {
+				return false;
+			}
+			
+			if (taskData->inputs.size() != 2 || taskData->outputs.size() != 1 || !taskData->inputs_count.empty() ||
+			!taskData->outputs_count.empty()) {
+				return false;
+			}
+			
+			if (taskData->inputs[0] == nullptr || taskData->inputs[1] == nullptr || taskData->outputs[0] == nullptr) {
+				return false;
+			}
+			
+			if (X->numberOfColumns != Y->numberOfRows) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_TBB::pre_processing() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			*Y = sparseMatrixTransposeCRS(*Y);
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_TBB::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			int sizePart = 10;
+			tbb::parallel_for(tbb::blocked_range<int>(0, X->numberOfRows, sizePart), [&](tbb::blocked_range<int> r) {
+				for (int rOne = r.begin(); rOne != r.end(); ++rOne) {
+					for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+						int firstCurrentPointer = X->pointers[rOne];
+						int secondCurrentPointer = Y->pointers[rTwo];
+						int firstEndPointer = X->pointers[rOne + 1] - 1;
+						int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+						double v = 0;
+						
+						while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+							if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+								if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+									v += (X->values[firstCurrentPointer]) * (Y->values[secondCurrentPointer]);
+									secondCurrentPointer++;
+									firstCurrentPointer++;
+								} else {
+									firstCurrentPointer++;
+								}
+							} else {
+								secondCurrentPointer++;
+							}
+						}
+						if (v != 0) {
+							localValues[rOne].push_back(v);
+							localColumnIndexes[rOne].push_back(rTwo);
+						}
+					}
+				}
+			});
+			
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter += localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_TBB::post_processing() {
+			internal_order_test();
+			
+			return true;
+		}
+	\end{verbatim}
+	
+	Файл sparse\_matmult\_crs\_stl.cpp
+	\begin{verbatim}
+		// Copyright 2024 Safarov Nurlan
+		#include "stl/safarov_n_sparse_matmult_crs/include/sparse_matmult_crs_stl.hpp"
+		
+		#include <algorithm>
+		#include <cmath>
+		#include <thread>
+		#include <utility>
+		#include <vector>
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows, const std::vector<double>& _values,
+		const std::vector<int>& _columnIndexes, const std::vector<int>& _pointers)
+		: numberOfColumns(_numberOfColumns),
+		numberOfRows(_numberOfRows),
+		values(_values),
+		columnIndexes(_columnIndexes),
+		pointers(_pointers) {}
+		
+		SparseMatrixCRS::SparseMatrixCRS(int _numberOfColumns, int _numberOfRows) {
+			numberOfColumns = _numberOfColumns;
+			numberOfRows = _numberOfRows;
+		}
+		
+		SparseMatrixCRS::SparseMatrixCRS(std::vector<std::vector<double>> matrix) {
+			int indexCounter = 0;
+			numberOfRows = matrix.size();
+			numberOfColumns = matrix[0].size();
+			pointers.push_back(indexCounter);
+			for (int r = 0; r < numberOfRows; r++) {
+				for (int c = 0; c < numberOfColumns; c++) {
+					if (matrix[r][c] != 0) {
+						values.push_back(matrix[r][c]);
+						indexCounter++;
+						columnIndexes.push_back(c);
+					}
+				}
+				pointers.push_back(indexCounter);
+			}
+		}
+		
+		SparseMatrixCRS sparseMatrixTransposeCRS(const SparseMatrixCRS& object) {
+			SparseMatrixCRS matrix;
+			std::vector<std::vector<int>> locCVec(object.numberOfColumns);
+			std::vector<std::vector<double>> locVecVal(object.numberOfColumns);
+			matrix.numberOfColumns = object.numberOfRows;
+			int elementCounter = 0;
+			matrix.numberOfRows = object.numberOfColumns;
+			
+			for (int r = 0; r < object.numberOfRows; r++) {
+				for (int index = object.pointers[r]; index < object.pointers[r + 1]; index++) {
+					int cIndex = object.columnIndexes[index];
+					locCVec[cIndex].push_back(r);
+					locVecVal[cIndex].push_back(object.values[index]);
+				}
+			}
+			matrix.pointers.push_back(elementCounter);
+			for (int c = 0; c < object.numberOfColumns; c++) {
+				for (size_t ktmp = 0; ktmp < locCVec[c].size(); ktmp++) {
+					matrix.columnIndexes.push_back(locCVec[c][ktmp]);
+					matrix.values.push_back(locVecVal[c][ktmp]);
+				}
+				elementCounter += locCVec[c].size();
+				matrix.pointers.push_back(elementCounter);
+			}
+			return matrix;
+		}
+		
+		bool SparseMatrixCRS::operator==(const SparseMatrixCRS& matrix) const {
+			return (values == matrix.values) && (numberOfColumns == matrix.numberOfColumns) &&
+			(columnIndexes == matrix.columnIndexes) && (numberOfRows == matrix.numberOfRows) &&
+			(pointers == matrix.pointers);
+		}
+		
+		std::vector<std::vector<double>> fillTheMatrixWithZeros(int columns, int rows) {
+			std::vector<std::vector<double>> result(rows);
+			for (int m = 0; m < rows; m++) {
+				for (int n = 0; n < columns; n++) {
+					result[m].push_back(0);
+				}
+			}
+			return result;
+		}
+		
+		std::vector<std::vector<double>> multiplyMatrices(std::vector<std::vector<double>> A,
+		std::vector<std::vector<double>> B) {
+			int p = B[0].size();
+			int q = A.size();
+			std::vector<std::vector<double>> resultMatrix = fillTheMatrixWithZeros(p, q);
+			for (int rr = 0; rr < q; rr++) {
+				for (int cc = 0; cc < p; cc++) {
+					resultMatrix[rr][cc] = 0;
+					for (size_t k = 0; k < A[0].size(); k++) {
+						resultMatrix[rr][cc] += A[rr][k] * B[k][cc];
+					}
+				}
+			}
+			return resultMatrix;
+		}
+		
+		std::vector<std::vector<double>> createRandomMatrix(int columns, int rows, double perc) {
+			if (perc < 0 || perc > 1) {
+				throw std::runtime_error("Wrong density. \n");
+			}
+			std::random_device mydev;
+			std::vector<std::vector<double>> result = fillTheMatrixWithZeros(columns, rows);
+			std::mt19937 gen(mydev());
+			std::uniform_real_distribution<double> genP{0.0, 1.0};
+			std::uniform_real_distribution<double> genVal{0.0, 25.0};
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < columns; c++) {
+					if (genP(gen) <= perc) {
+						result[r][c] = genVal(gen);
+					}
+				}
+			}
+			return result;
+		}
+		
+		bool verifyCRSAttributes(const SparseMatrixCRS& object) {
+			int nonZeroCount = object.values.size();
+			auto check = size_t(nonZeroCount);
+			
+			if (object.pointers.size() != size_t(object.numberOfRows + 1)) {
+				return false;
+			}
+			if (object.pointers[0] != 0) {
+				return false;
+			}
+			if (object.values.size() != check || object.columnIndexes.size() != check ||
+			object.pointers[object.numberOfRows] != nonZeroCount) {
+				return false;
+			}
+			
+			for (int i = 0; i < nonZeroCount; ++i) {
+				if (object.columnIndexes[i] < 0 || object.columnIndexes[i] >= object.numberOfColumns) {
+					return false;
+				}
+			}
+			
+			for (int j = 1; j <= object.numberOfRows; ++j) {
+				if (object.pointers[j - 1] > object.pointers[j]) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_STL::validation() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			if (X == nullptr || Y == nullptr || Z == nullptr) {
+				return false;
+			}
+			
+			if (!verifyCRSAttributes(*X) || !verifyCRSAttributes(*Y)) {
+				return false;
+			}
+			
+			if (taskData->inputs.size() != 2 || taskData->outputs.size() != 1 || !taskData->inputs_count.empty() ||
+			!taskData->outputs_count.empty()) {
+				return false;
+			}
+			
+			if (taskData->inputs[0] == nullptr || taskData->inputs[1] == nullptr || taskData->outputs[0] == nullptr) {
+				return false;
+			}
+			
+			if (X->numberOfColumns != Y->numberOfRows) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_STL::pre_processing() {
+			internal_order_test();
+			
+			X = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[0]);
+			Y = reinterpret_cast<SparseMatrixCRS*>(taskData->inputs[1]);
+			Z = reinterpret_cast<SparseMatrixCRS*>(taskData->outputs[0]);
+			
+			*Y = sparseMatrixTransposeCRS(*Y);
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_STL::run() {
+			internal_order_test();
+			
+			std::vector<int> finalColumnIndexes;
+			std::vector<int> finalPointers;
+			std::vector<double> finalValues;
+			int resultRows = X->numberOfRows;
+			std::vector<std::vector<int>> localColumnIndexes(X->numberOfRows);
+			std::vector<std::vector<double>> localValues(X->numberOfRows);
+			
+			int resultColumnIndexes = Y->numberOfRows;  // After transposing matrix Y
+			
+			const int num_threads = 4;
+			std::vector<std::thread> threads(num_threads);
+			
+			for (int i = 0; i < num_threads; ++i) {
+				threads[i] = std::thread([&, i]() {
+					for (int rOne = i; rOne < X->numberOfRows; rOne += num_threads) {
+						for (int rTwo = 0; rTwo < Y->numberOfRows; rTwo++) {
+							int firstCurrentPointer = X->pointers[rOne];
+							int secondCurrentPointer = Y->pointers[rTwo];
+							int firstEndPointer = X->pointers[rOne + 1] - 1;
+							int secondEndPointer = Y->pointers[rTwo + 1] - 1;
+							double v = 0;
+							
+							while ((secondCurrentPointer <= secondEndPointer) && (firstCurrentPointer <= firstEndPointer)) {
+								if (X->columnIndexes[firstCurrentPointer] <= Y->columnIndexes[secondCurrentPointer]) {
+									if (X->columnIndexes[firstCurrentPointer] == Y->columnIndexes[secondCurrentPointer]) {
+										v += X->values[firstCurrentPointer] * Y->values[secondCurrentPointer];
+										secondCurrentPointer++;
+										firstCurrentPointer++;
+									} else {
+										firstCurrentPointer++;
+									}
+								} else {
+									secondCurrentPointer++;
+								}
+							}
+							if (v != 0) {
+								localValues[rOne].push_back(v);
+								localColumnIndexes[rOne].push_back(rTwo);
+							}
+						}
+					}
+				});
+			}
+			
+			for (auto& thread : threads) {
+				thread.join();
+			}
+			
+			int elementCounter = 0;
+			finalPointers.push_back(elementCounter);
+			
+			for (int indRow = 0; indRow < X->numberOfRows; indRow++) {
+				elementCounter = elementCounter + localColumnIndexes[indRow].size();
+				finalColumnIndexes.insert(finalColumnIndexes.end(), localColumnIndexes[indRow].begin(),
+				localColumnIndexes[indRow].end());
+				finalValues.insert(finalValues.end(), localValues[indRow].begin(), localValues[indRow].end());
+				finalPointers.push_back(elementCounter);
+			}
+			
+			Z->numberOfColumns = resultColumnIndexes;
+			Z->numberOfRows = resultRows;
+			Z->values = finalValues;
+			Z->columnIndexes = finalColumnIndexes;
+			Z->pointers = finalPointers;
+			
+			return true;
+		}
+		
+		bool SparseMatrixMultiplicationCRS_STL::post_processing() {
+			internal_order_test();
+			
+			return true;
+		}
+	\end{verbatim}
+	
+\end{document}
