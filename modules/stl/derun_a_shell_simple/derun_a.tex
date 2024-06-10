@@ -15,9 +15,7 @@
 \usepackage{indentfirst}
 \usepackage{amsmath}
 \usepackage{amssymb}
-
-\usepackage{minted}
-\usemintedstyle{tango}
+\usepackage{listings}
 
 \geometry{a4paper,top=2cm,bottom=2cm,left=3cm,right=1.5cm}
 \setlength{\parskip}{0.5cm}
@@ -41,7 +39,7 @@
 \newcommand{\term}[1]{$\mathtt{#1}$}
 \newcommand{\termn}[1]{\mathtt{#1}}
 
-\newcommand{\cpp}[1]{\mintinline{cpp}{#1}}
+\newcommand{\cpp}{\textit{}}
 
 \begin{document}
 
@@ -193,13 +191,13 @@
 
 \subsection{Последовательная реализация}
 
-\par Последовательная реализация \cpp{void ShellOMP::shell_sort(std::vector<int>& vec)} устроена следующим образом:
+\par Последовательная реализация \cpp{void ShellOMP::shell\_sort(std::vector<int>\& vec)} устроена следующим образом:
 
 \begin{itemize}
     \item Входные данные:
 
     \begin{itemize}
-        \item \cpp{std::vector<int>& vec}: вектор целых чисел, который нужно отсортировать.
+        \item \cpp{std::vector<int>\& vec}: вектор целых чисел, который нужно отсортировать.
     \end{itemize}
     
     \item Принцип работы:
@@ -220,15 +218,15 @@
 \subsection{Простое слияние}
 
 \par Описание работы функции
-\begin{minted}[breaklines]{cpp}
+\begin{lstlisting}[language=C++]
 std::vector<int> ShellOMP::merge(const std::vector<std::vector<int>>& chunks):
-\end{minted}
+\end{lstlisting}
 
 \begin{itemize}
     \item Входные данные:
 
     \begin{itemize}
-        \item \cpp{const std::vector<std::vector<int>>& chunks}: Вектор, содержащий несколько отсортированных векторов (чанков), которые нужно объединить.
+        \item \cpp{const std::vector<std::vector<int>>\& chunks}: Вектор, содержащий несколько отсортированных векторов (чанков), которые нужно объединить.
     \end{itemize}
 
     \item Выходные данные:
@@ -289,55 +287,55 @@ std::vector<int> ShellOMP::merge(const std::vector<std::vector<int>>& chunks):
     \item Инициализация:
     \begin{itemize}
         \item Получаем количество доступных процессоров для параллельной обработки:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     int numProcs = omp_get_num_procs();
-        \end{minted}
+        \end{lstlisting}
 
         \item Определяем размер входного массива и рассчитываем размер чанков для каждого процессора:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     int size = static_cast<int>(input.size());
     int chunkSize = size / numProcs;
     int remainder = size % numProcs;
-        \end{minted}
+        \end{lstlisting}
 
         \item Создаем вектор чанков:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     std::vector<std::vector<int>> chunks(numProcs);
-        \end{minted}
+        \end{lstlisting}
     \end{itemize}
 
     \item Параллельная сортировка чанков:
     \begin{itemize}
-        \item Используем директиву OpenMP \cpp{#pragma omp parallel for} для параллельного выполнения цикла:
-        \begin{minted}[breaklines]{cpp}
+        \item Используем директиву OpenMP \cpp{\#pragma omp parallel for} для параллельного выполнения цикла:
+        \begin{lstlisting}[language=C++]
     #pragma omp parallel for
     for (int i = 0; i < numProcs; ++i) {
       int startIdx = i * chunkSize;
       int endIdx = startIdx + chunkSize;
       if (i == numProcs - 1) {
-        endIdx += remainder;  // Добавляем оставшиеся элементы в последний чанк
+        endIdx += remainder;
       }
       chunks[i].assign(input.begin() + startIdx, input.begin() + endIdx);
       shell_sort(chunks[i]);
     }
-        \end{minted}
+        \end{lstlisting}
         
-        \item Каждый поток сортирует свой чанк с помощью последовательной сортировки Шелла (\cpp{shell_sort}).
+        \item Каждый поток сортирует свой чанк с помощью последовательной сортировки Шелла (\cpp{shell\_sort}).
     \end{itemize}
     \item Синхронизация:
     \begin{itemize}
         \item Используем барьер синхронизации, чтобы убедиться, что все потоки завершили сортировку своих чанков:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     #pragma omp barrier
-        \end{minted}
+        \end{lstlisting}
     \end{itemize}
     
     \item Объединение отсортированных чанков:
     \begin{itemize}
         \item Объединяем все отсортированные чанки в единый отсортированный массив с помощью функции \cpp{merge}:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     input = merge(chunks);
-        \end{minted}
+        \end{lstlisting}
     \end{itemize}
 \end{enumerate}
 
@@ -349,50 +347,50 @@ std::vector<int> ShellOMP::merge(const std::vector<std::vector<int>>& chunks):
 \begin{enumerate}
     \item Инициализация:
     \begin{itemize}
-        \item Устанавливаем фиксированное количество потоков \cpp{numProcs} (в данном случае 4, но можно использовать \cpp{tbb::task_scheduler_init::default_num_threads()} для автоматического определения):
-        \begin{minted}[breaklines]{cpp}
+        \item Устанавливаем фиксированное количество потоков \cpp{numProcs} (в данном случае 4, но можно использовать \cpp{tbb::task\_scheduler\_init::default\_num\_threads()} для автоматического определения):
+        \begin{lstlisting}[language=C++]
     int numProcs = 4;
-        \end{minted}
+        \end{lstlisting}
 
         \item Определяем размер входного массива и рассчитываем размер чанков:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     int size = static_cast<int>(input.size());
     int chunkSize = size / numProcs;
     int remainder = size % numProcs;
-        \end{minted}
+        \end{lstlisting}
     
         \item Создаем вектор чанков:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
     std::vector<std::vector<int>> chunks(numProcs);
-        \end{minted}
+        \end{lstlisting}
     \end{itemize}
     \item Параллельная сортировка чанков:
     \begin{itemize}
-        \item Используем \cpp{tbb::parallel_for} для параллельного выполнения цикла:
-        \begin{minted}[breaklines]{cpp}
+        \item Используем \cpp{tbb::parallel\_for} для параллельного выполнения цикла:
+        \begin{lstlisting}[language=C++]
     tbb::parallel_for(0, numProcs, [&](int i) {
       int startIdx = i * chunkSize;
       int endIdx = startIdx + chunkSize;
       if (i == numProcs - 1) {
-        endIdx += remainder;  // Добавляем оставшиеся элементы в последний чанк
+        endIdx += remainder;
       }
       chunks[i].assign(input.begin() + startIdx, input.begin() + endIdx);
       shell_sort(chunks[i]);
     });
-        \end{minted}
+        \end{lstlisting}
 
-        \item Каждый поток сортирует свой чанк с помощью последовательной сортировки Шелла (\cpp{shell_sort}).
+        \item Каждый поток сортирует свой чанк с помощью последовательной сортировки Шелла (\cpp{shell\_sort}).
     \end{itemize}
     \item Синхронизация:
     \begin{itemize}
-        \item В TBB не требуется явная синхронизация барьером, так как \cpp{tbb::parallel_for} обеспечивает автоматическую синхронизацию.
+        \item В TBB не требуется явная синхронизация барьером, так как \cpp{tbb::parallel\_for} обеспечивает автоматическую синхронизацию.
     \end{itemize}
     \item Объединение отсортированных чанков:
     \begin{itemize}
         \item Объединяем все отсортированные чанки в единый отсортированный массив с помощью функции \cpp{merge}:
-        \begin{minted}[breaklines]{cpp}
+        \begin{lstlisting}[language=C++]
         input = merge(chunks);
-        \end{minted}
+        \end{lstlisting}
     \end{itemize}
 \end{enumerate}
 
@@ -429,15 +427,15 @@ std::vector<int> ShellOMP::merge(const std::vector<std::vector<int>>& chunks):
 \end{itemize}
 
 \par В качестве тестовых данных использовались рандомные массивы различных размеров, сгенерированные специальной функцией:
-\begin{minted}[breaklines]{cpp}
+\begin{lstlisting}[language=C++]
 std::vector<int> ShellSequential::generate_random_vector(int size, int min, int max);
-\end{minted}
+\end{lstlisting}
 
 \par Для проверки корректности работы сортировки использовалась функция:
 
-\begin{minted}[breaklines]{cpp}
+\begin{lstlisting}[language=C++]
 bool ShellSequential::checkSorted(std::vector<int> input);
-\end{minted}
+\end{lstlisting}
 
 \par Она проверяет упорядоченность элементов в массиве.
 
@@ -510,7 +508,7 @@ bool ShellSequential::checkSorted(std::vector<int> input);
 
 \section{Приложение}
 
-\begin{minted}[breaklines]{cpp}
+\begin{lstlisting}[language=C++]
 std::vector<int> ShellSequential::shell_sort(const std::vector<int>& input) {
   std::vector<int> vec(input);
 
@@ -632,6 +630,6 @@ void ShellTBB::shell_sort_parallel(std::vector<int>& input) {
 
   input = merge(chunks);
 }
-\end{minted}
+\end{lstlisting}
 
 \end{document}
