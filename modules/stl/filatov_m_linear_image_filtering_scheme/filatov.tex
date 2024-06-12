@@ -1,0 +1,995 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Линейная фильтрация изображений (горизонтальное разбиение). Ядро Гаусса 3x3>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР2\\Филатов М. С.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В эпоху стремительного развития технологий обработки цифровых изображений одной из ключевых задач является эффективное применение параллельных вычислений для повышения производительности алгоритмов. Линейная фильтрация, в частности с использованием ядра Гаусса размера 3x3, является распространенным методом улучшения качества изображений, устранения шумов и выделения важных деталей. Однако при обработке крупных изображений данный процесс может быть весьма ресурсоемким и требовать значительных вычислительных мощностей.
+
+\par Целью настоящей работы является разработка и анализ эффективности параллельного алгоритма линейной фильтрации изображений с применением ядра Гаусса 3x3 и горизонтального разбиения изображения на системах с общей памятью. Горизонтальное разбиение позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может существенно ускорить процесс фильтрации и повысить производительность.
+
+\par В рамках данной работы будут рассмотрены теоретические основы линейной фильтрации изображений, описан параллельный алгоритм фильтрации с использованием ядра Гаусса и горизонтального разбиения, а также проведены эксперименты по оценке эффективности и ускорения предложенного алгоритма на различных наборах данных и конфигурациях системы. Результаты исследования могут быть полезны для разработчиков программного обеспечения в области обработки изображений и компьютерного зрения, а также для исследователей, занимающихся параллельными вычислениями и оптимизацией алгоритмов.
+
+\par В рамках задачи реализован алгоритм с использованием технологий: SEQ, OMP, TBB, STD.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+\item Реализовать четыре версии алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии OMP (OpenMP)
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+\item Сравнить реализации и производительность версий.
+\item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Линейная фильтрация изображений с использованием ядра Гаусса 3x3 является широко применяемым методом для сглаживания изображений и удаления высокочастотных шумов. Данный алгоритм заключается в вычислении взвешенного среднего значения пикселей в окрестности каждого пикселя исходного изображения.
+
+\par \textbf{Алгоритм линейной фильтрации с использованием ядра Гаусса 3x3 и горизонтального разбиения:}
+
+\begin{enumerate}
+\item Разделить исходное изображение на горизонтальные полосы.
+\item Для каждой полосы выполнить следующие действия:
+\begin{enumerate}
+\item Применить ядро Гаусса 3x3 к каждому пикселю полосы, вычисляя взвешенное среднее значение соседних пикселей.
+\item Обработать граничные пиксели, используя соответствующие значения из соседних полос.
+\end{enumerate}
+\item Объединить обработанные полосы в результирующее изображение.
+\end{enumerate}
+
+\par Горизонтальное разбиение изображения позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс фильтрации и повысить производительность.
+
+\par В рамках данной работы будут реализованы четыре версии алгоритма линейной фильтрации с использованием ядра Гаусса 3x3 и горизонтального разбиения:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии (OMP) OpenMP
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+Будет проведено сравнение реализаций и анализ производительности каждой версии.
+
+\newpage
+
+% Описание схемы распараллеливания
+\section* {Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения состоит из следующих основных этапов, которые были распараллелены:}
+\begin{enumerate}
+\item Копирование входных данных в изображение
+\item Применение ядра Гаусса 3x3 к каждому пикселю изображения
+\item Копирование обработанного изображения в выходные данные
+\end{enumerate}
+\vspace{2em}
+\par \textbf{На втором этапе (применение ядра Гаусса 3x3) было распараллелено:}
+\begin{enumerate}
+\item Вычисление новых значений цветовых компонент каждого пикселя с использованием ядра Гаусса 3x3
+\item Ограничение значений цветовых компонент до допустимого диапазона
+\end{enumerate}
+\vspace{1em}
+\par Горизонтальное разбиение изображения позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс фильтрации и повысить производительность. В реализации OMP использовалась директива \texttt pragma omp parallel for для распараллеливания цикла, выполняющего применение ядра Гаусса 3x3 к каждому пикселю изображения. В других реализациях с использованием других технолигий распараллеливалась та же секция.
+
+\newpage
+
+% Описание OpenMP, TBB и STL версий
+\section* {Описание OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения, использующих параллельные вычисления, основные участки кода, подлежащие распараллеливанию, остаются неизменными. Однако ключевое различие между версиями, такими как OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), заключается в предоставляемых ими возможностях и методах распараллеливания.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+\item В OpenMP были использованы директивы:
+\vspace{0.5em}
+\begin{enumerate}
+\item[1.1] \begin{verbatim}
+#pragma omp parallel for
+\end{verbatim}
+
+для распараллеливания цикла, выполняющего применение ядра Гаусса 3x3 к каждому пикселю изображения
+\end{enumerate}
+\item В TBB было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[2.1] \begin{verbatim}
+tbb::parallel_for(tbb::blocked_range2d(0, height, 0, width), [&](const tbb::blocked_range2d& r) { ... })
+\end{verbatim}
+для распараллеливания вычисления новых значений цветовых компонент для каждого пикселя изображения
+\end{enumerate}
+\item В STL было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[3.1] \begin{verbatim}
+std::thread
+\end{verbatim}
+для создания потоков, выполняющих применение ядра Гаусса 3x3 к различным частям изображения
+\item[3.2] \begin{verbatim}
+std::thread::join
+\end{verbatim}
+для ожидания завершения выполнения всех потоков
+\end{enumerate}
+\end{enumerate}
+
+Во всех трех версиях основными распараллеливаемыми участками кода являются:
+\begin{enumerate}
+\item Вычисление новых значений цветовых компонент для каждого пикселя изображения с использованием ядра Гаусса 3x3
+\item Ограничение значений цветовых компонент до допустимого диапазона
+\end{enumerate}
+
+Различия между версиями заключаются в используемых средствах параллельного программирования и способах распределения вычислительной нагрузки между потоками.
+
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения была проверена путем сравнения результатов фильтрации с эталонными изображениями.
+\par Тестирование производительности проводилось на изображениях различных размеров, начиная от 512x512 пикселей и до 2048x2048 пикселей.
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: AMD Ryzen 7 4800H, 8 ядер / 16 потоков
+\item Оперативная память: 16 ГБ
+\item Операционная система: Windows 10
+\end{itemize}
+\par Количество потоков для параллельных версий алгоритма было ограничено до 4.
+\par В таблице приведены средние значения времени обработки изображения размером 1024х1024 пикселей за 10 запусков.
+\par \textbf{Результаты экспериментов:}
+\begin{center}
+\begin{tabular}{ ||c | c | c ||  }
+    \hline Версия алгоритма & pipeline (сек) & task (сек)\\ 
+    \hline Последовательная & 2.1235411100 & 2.0725412400 \\
+    \hline OMP & 1.1183264209 & 1.0781151349 \\
+    \hline TBB & 1.0841456712 & 1.0515942547 \\ 
+    \hline STL & 1.1245168910 & 1.0956216933 \\ 
+    \hline
+\end{tabular}\\[5mm]
+\end{center}
+
+\newpage
+
+% Анализ результатов
+\section*{Анализ результатов}
+\addcontentsline{toc}{section}{Анализ результатов}
+\par Для оценки эффективности параллельных алгоритмов линейной фильтрации изображений с использованием ядра Гаусса 3x3, были рассчитаны коэффициенты ускорения и эффективности. Расчеты основаны на среднем времени выполнения алгоритмов для изображения размером 1024х1024 пикселей.
+
+\par Коэффициент ускорения \( p_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ p_i = \frac{T_{si}}{T_{pi}} $$
+где \( T_{si} \) - время выполнения последовательного алгоритма, а \( T_{pi} \) - время выполнения параллельного алгоритма для \( i \)-й версии.
+
+\par Эффективность \( e_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ e_i = \frac{p_i}{N} $$
+где \( N \) - количество потоков (в данном случае 4).
+
+\par Используя данные из предыдущей таблицы, получаем следующие результаты для двух различных типов задач: pipeline и task.
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{2.1235411100}{1.1183264209} \approx 1.90 \) & \( \frac{1.90}{4} \approx 0.475 \) \\
+ TBB & \( \frac{2.1235411100}{1.0841456712} \approx 1.96 \) & \( \frac{1.96}{4} \approx 0.49 \) \\
+ STL & \( \frac{2.1235411100}{1.1245168910} \approx 1.89 \) & \( \frac{1.89}{4} \approx 0.472 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{2.0725412400}{1.0781151349} \approx 1.92 \) & \( \frac{1.92}{4} \approx 0.48 \) \\
+ TBB & \( \frac{2.0725412400}{1.0515942547} \approx 1.97 \) & \( \frac{1.97}{4} \approx 0.492 \) \\
+ STL & \( \frac{2.0725412400}{1.0956216933} \approx 1.89 \) & \( \frac{1.89}{4} \approx 0.472 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Выводы}:
+\begin{itemize}
+    \item В обоих типах задач (pipeline и task) наилучшее ускорение и эффективность показала версия TBB.
+    \item Наименьшее ускорение и эффективность демонстрирует STL версия.
+    \item Распараллеливание алгоритма привело к ускорению его выполнения примерно в два раза по сравнению с последовательной версией.
+\end{itemize}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В ходе данной лабораторной работы были успешно реализованы и проанализированы как последовательный, так и параллельные алгоритмы линейной фильтрации изображений с использованием ядра Гаусса 3x3. Экспериментальные замеры производительности подтвердили, что распараллеливание алгоритма значительно увеличивает его эффективность, особенно на системах с многопоточной обработкой.
+
+\par Оценка удобства использования различных технологий параллелизма показала, что, несмотря на некоторые накладные расходы, TBB и OpenMP предоставляют мощные инструменты для оптимизации производительности. STL, хотя и оказался менее эффективным в данном контексте, все же предоставляет ценные возможности для упрощения многопоточного программирования.
+
+\par Ранжирование технологий по удобству использования, на основе личного опыта и результатов тестирования, выглядит следующим образом:
+\begin{itemize}
+    \item[1.] TBB — за его высокую производительность и удобство в управлении потоками.
+    \item[2.] OpenMP — за простоту внедрения и хорошую поддержку компиляторами.
+    \item[3.] STL — за его доступность и интеграцию с стандартной библиотекой C++.
+\end{itemize}
+
+\par В заключение, результаты данной работы могут служить отправной точкой для дальнейших исследований в области параллельных вычислений и оптимизации алгоритмов обработки изображений.
+
+\newpage
+
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью".
+    \item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с.
+    \item Матричные фильтры обработки изображений. Доступно: \url{https://habr.com/ru/articles/142818/}
+    \item Основы обработки изображений. Доступно: \url{https://cmcmsu.info/download/cv2015_03_ip.pdf}
+\end{enumerate}
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Filatov Maxim
+#include "seq/filatov_m_linear_image_filtering/include/ops_seq.hpp"
+
+#include <cstdint>
+
+Color::Color() { R = G = B = 0; }
+
+ColorF::ColorF() { R = G = B = .0f; }
+
+void GaussFilterHorizontal::initializeData() {
+  input = taskData->inputs[0];
+  output = taskData->outputs[0];
+  width = taskData->inputs_count[0];
+  height = taskData->inputs_count[1];
+}
+
+void GaussFilterHorizontal::copyInputToImage() {
+  image.resize(width * height * 3);
+  std::memcpy(image.data(), input, width * height * 3);
+}
+
+bool GaussFilterHorizontal::pre_processing() {
+  internal_order_test();
+  initializeData();
+  copyInputToImage();
+  makeKernel();
+  return true;
+}
+
+bool GaussFilterHorizontal::validation_is_input_size_valid() {
+  return taskData->inputs_count[0] >= 3 && taskData->inputs_count[1] >= 3;
+}
+
+bool GaussFilterHorizontal::validation_is_output_size_valid_first() {
+  return taskData->outputs_count[0] == taskData->inputs_count[0];
+}
+
+bool GaussFilterHorizontal::validation_is_output_size_valid_second() {
+  return taskData->outputs_count[1] == taskData->inputs_count[1];
+}
+
+bool GaussFilterHorizontal::validation() {
+  internal_order_test();
+  bool isInputSizeValid = validation_is_input_size_valid();
+  bool isOutputSizeValidFirst = validation_is_output_size_valid_first();
+  bool isOutputSizeValidSecond = validation_is_output_size_valid_second();
+  bool isOutputSizeValid = isOutputSizeValidFirst && isOutputSizeValidSecond;
+  return isInputSizeValid && isOutputSizeValid;
+}
+
+bool GaussFilterHorizontal::run() {
+  internal_order_test();
+  applyKernel();
+  return true;
+}
+
+bool GaussFilterHorizontal::copyImageData() {
+  std::memcpy(output, image.data(), width * height * 3);
+  return true;
+}
+
+bool GaussFilterHorizontal::post_processing() {
+  internal_order_test();
+  return copyImageData();
+}
+
+void GaussFilterHorizontal::calculateGaussianValues(float sigma, float* normalizationFactor) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t row = -halfSize; row <= halfSize; row++) {
+    for (int64_t col = -halfSize; col <= halfSize; col++) {
+      double gaussianValue = std::exp(-(row * row + col * col) / (2 * sigma * sigma));
+      kernel[row + halfSize][col + halfSize] = gaussianValue;
+      *normalizationFactor += gaussianValue;
+    }
+  }
+}
+
+void GaussFilterHorizontal::normalizeKernel(float normalizationFactor) {
+  for (uint32_t row = 0; row < kSize; row++) {
+    for (uint32_t col = 0; col < kSize; col++) {
+      kernel[row][col] /= normalizationFactor;
+    }
+  }
+}
+
+void GaussFilterHorizontal::makeKernel(float sigma) {
+  float normalizationFactor = 0;
+  calculateGaussianValues(sigma, &normalizationFactor);
+  normalizeKernel(normalizationFactor);
+}
+
+void GaussFilterHorizontal::applyKernel() {
+  uint32_t index = 0;
+  for (auto& pixel : image) {
+    uint32_t i = index / width;
+    uint32_t j = index % width;
+    pixel = calculateNewPixelColor(i, j);
+    index++;
+  }
+}
+
+void GaussFilterHorizontal::calculateSingleColorComponent(uint8_t neighborColor, float kernelValue,
+                                                          float* newColorComponent) {
+  *newColorComponent += neighborColor * kernelValue;
+}
+
+void GaussFilterHorizontal::calculateColorsComponents(Color* neighborColor, int64_t k, int64_t l, int64_t halfSize,
+                                                      ColorF* color) {
+  calculateSingleColorComponent(neighborColor->R, kernel[k + halfSize][l + halfSize], &color->R);
+  calculateSingleColorComponent(neighborColor->G, kernel[k + halfSize][l + halfSize], &color->G);
+  calculateSingleColorComponent(neighborColor->B, kernel[k + halfSize][l + halfSize], &color->B);
+}
+
+void GaussFilterHorizontal::calculateColorComponentsForRow(int64_t l, size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t k = -halfSize; k <= halfSize; k++) {
+    auto idX = clamp<size_t>((x + k), 0, width - 1);
+    auto idY = clamp<size_t>((y + l), 0, height - 1);
+    Color neighborColor = image[idX * width + idY];
+    calculateColorsComponents(&neighborColor, k, l, halfSize, color);
+  }
+}
+
+void GaussFilterHorizontal::calculateColorComponents(size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t l = -halfSize; l <= halfSize; l++) {
+    calculateColorComponentsForRow(l, x, y, color);
+  }
+}
+
+Color GaussFilterHorizontal::calculateCeilColorF(ColorF preparedColor) {
+  Color resultColor;
+  resultColor.R = (uint8_t)std::ceil(preparedColor.R);
+  resultColor.G = (uint8_t)std::ceil(preparedColor.G);
+  resultColor.B = (uint8_t)std::ceil(preparedColor.B);
+  return resultColor;
+}
+
+Color GaussFilterHorizontal::calculateNewPixelColor(size_t x, size_t y) {
+  ColorF preparedColor;
+  calculateColorComponents(x, y, &preparedColor);
+  return calculateCeilColorF(preparedColor);
+}
+
+template <typename T>
+T GaussFilterHorizontal::clamp(const T& val, const T& min, const T& max) {
+  if (val < min) {
+    return min;
+  }
+  if (val > max) {
+    return max;
+  }
+  return val;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Filatov Maxim
+#include "omp/filatov_m_linear_image_filtering/include/ops_omp.hpp"
+
+#include <cstdint>
+
+filatov_omp::Color::Color() { R = G = B = 0; }
+
+uint8_t filatov_omp::Color::convert(float var) { return static_cast<uint8_t>(std::ceil(var)); }
+
+void filatov_omp::Color::setAll(ColorF cf) {
+  R = convert(cf.R);
+  G = convert(cf.G);
+  B = convert(cf.B);
+}
+
+filatov_omp::ColorF::ColorF() { R = G = B = .0f; }
+
+void filatov_omp::GaussFilterHorizontal::initializeData() {
+  input = taskData->inputs[0];
+  output = taskData->outputs[0];
+  width = taskData->inputs_count[0];
+  height = taskData->inputs_count[1];
+}
+
+void filatov_omp::GaussFilterHorizontal::copyInputToImage() {
+  image.resize(width * height * 3);
+  std::memcpy(image.data(), input, width * height * 3);
+}
+
+bool filatov_omp::GaussFilterHorizontal::pre_processing() {
+  internal_order_test();
+  initializeData();
+  copyInputToImage();
+  makeKernel();
+  return true;
+}
+
+bool filatov_omp::GaussFilterHorizontal::validation_is_input_size_valid() {
+  return taskData->inputs_count[0] >= 3 && taskData->inputs_count[1] >= 3;
+}
+
+bool filatov_omp::GaussFilterHorizontal::validation_is_output_size_valid_first() {
+  return taskData->outputs_count[0] == taskData->inputs_count[0];
+}
+
+bool filatov_omp::GaussFilterHorizontal::validation_is_output_size_valid_second() {
+  return taskData->outputs_count[1] == taskData->inputs_count[1];
+}
+
+bool filatov_omp::GaussFilterHorizontal::validation() {
+  internal_order_test();
+  bool isInputSizeValid = validation_is_input_size_valid();
+  bool isOutputSizeValidFirst = validation_is_output_size_valid_first();
+  bool isOutputSizeValidSecond = validation_is_output_size_valid_second();
+  bool isOutputSizeValid = isOutputSizeValidFirst && isOutputSizeValidSecond;
+  return isInputSizeValid && isOutputSizeValid;
+}
+
+bool filatov_omp::GaussFilterHorizontal::run() {
+  internal_order_test();
+  applyKernel();
+  return true;
+}
+
+bool filatov_omp::GaussFilterHorizontal::copyImageData() {
+  std::memcpy(output, image.data(), width * height * 3);
+  return true;
+}
+
+bool filatov_omp::GaussFilterHorizontal::post_processing() {
+  internal_order_test();
+  return copyImageData();
+}
+
+void filatov_omp::GaussFilterHorizontal::calculateGaussianValues(float sigma, float* normalizationFactor) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t row = -halfSize; row <= halfSize; row++) {
+    for (int64_t col = -halfSize; col <= halfSize; col++) {
+      double gaussianValue = std::exp(-(row * row + col * col) / (2 * sigma * sigma));
+      kernel[row + halfSize][col + halfSize] = gaussianValue;
+      *normalizationFactor += gaussianValue;
+    }
+  }
+}
+
+void filatov_omp::GaussFilterHorizontal::normalizeKernel(float normalizationFactor) {
+  for (uint32_t row = 0; row < kSize; row++) {
+    for (uint32_t col = 0; col < kSize; col++) {
+      kernel[row][col] /= normalizationFactor;
+    }
+  }
+}
+
+void filatov_omp::GaussFilterHorizontal::makeKernel(float sigma) {
+  float normalizationFactor = 0;
+  calculateGaussianValues(sigma, &normalizationFactor);
+  normalizeKernel(normalizationFactor);
+}
+
+void filatov_omp::GaussFilterHorizontal::applyKernel() {
+#pragma omp parallel for
+  for (int32_t index = 0; index < static_cast<int32_t>(image.size()); index++) {
+    int32_t i = index / width;
+    int32_t j = index % width;
+    image[index] = calculateNewPixelColor(i, j);
+  }
+}
+
+void filatov_omp::GaussFilterHorizontal::calculateSingleColorComponent(uint8_t neighborColor, float kernelValue,
+                                                                       float* newColorComponent) {
+  *newColorComponent += neighborColor * kernelValue;
+}
+
+void filatov_omp::GaussFilterHorizontal::calculateColorsComponents(Color* neighborColor, int64_t k, int64_t l,
+                                                                   int64_t halfSize, ColorF* color) {
+  calculateSingleColorComponent(neighborColor->R, kernel[k + halfSize][l + halfSize], &color->R);
+  calculateSingleColorComponent(neighborColor->G, kernel[k + halfSize][l + halfSize], &color->G);
+  calculateSingleColorComponent(neighborColor->B, kernel[k + halfSize][l + halfSize], &color->B);
+}
+
+void filatov_omp::GaussFilterHorizontal::calculateColorComponentsForRow(int64_t l, size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t k = -halfSize; k <= halfSize; k++) {
+    auto idX = clamp<size_t>((x + k), 0, width - 1);
+    auto idY = clamp<size_t>((y + l), 0, height - 1);
+    Color neighborColor = image[idX * width + idY];
+    calculateColorsComponents(&neighborColor, k, l, halfSize, color);
+  }
+}
+
+void filatov_omp::GaussFilterHorizontal::calculateColorComponents(size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t l = -halfSize; l <= halfSize; l++) {
+    calculateColorComponentsForRow(l, x, y, color);
+  }
+}
+
+filatov_omp::Color filatov_omp::GaussFilterHorizontal::calculateCeilColorF(ColorF preparedColor) {
+  Color resultColor;
+  resultColor.setAll(preparedColor);
+  return resultColor;
+}
+
+filatov_omp::Color filatov_omp::GaussFilterHorizontal::calculateNewPixelColor(size_t x, size_t y) {
+  ColorF preparedColor;
+  calculateColorComponents(x, y, &preparedColor);
+  return calculateCeilColorF(preparedColor);
+}
+
+template <typename T>
+T filatov_omp::GaussFilterHorizontal::clamp(const T& val, const T& min, const T& max) {
+  return (val < min ? min : (val > max ? max : val));
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Filatov Maxim
+#include "tbb/filatov_m_linear_image_filtering_tbb/include/ops_tbb.hpp"
+
+#include <cstdint>
+
+filatov_tbb::Color::Color() { R = G = B = 0; }
+
+filatov_tbb::ColorF::ColorF() { R = G = B = .0f; }
+
+void filatov_tbb::GaussFilterHorizontal::initializeData() {
+  input = taskData->inputs[0];
+  output = taskData->outputs[0];
+  width = taskData->inputs_count[0];
+  height = taskData->inputs_count[1];
+}
+
+void filatov_tbb::GaussFilterHorizontal::copyInputToImage() {
+  image.resize(width * height * 3);
+  std::memcpy(image.data(), input, width * height * 3);
+}
+
+bool filatov_tbb::GaussFilterHorizontal::pre_processing() {
+  internal_order_test();
+  initializeData();
+  copyInputToImage();
+  makeKernel();
+  return true;
+}
+
+bool filatov_tbb::GaussFilterHorizontal::validation_is_input_size_valid() {
+  return taskData->inputs_count[0] >= 3 && taskData->inputs_count[1] >= 3;
+}
+
+bool filatov_tbb::GaussFilterHorizontal::validation_is_output_size_valid_first() {
+  return taskData->outputs_count[0] == taskData->inputs_count[0];
+}
+
+bool filatov_tbb::GaussFilterHorizontal::validation_is_output_size_valid_second() {
+  return taskData->outputs_count[1] == taskData->inputs_count[1];
+}
+
+bool filatov_tbb::GaussFilterHorizontal::validation() {
+  internal_order_test();
+  bool isInputSizeValid = validation_is_input_size_valid();
+  bool isOutputSizeValidFirst = validation_is_output_size_valid_first();
+  bool isOutputSizeValidSecond = validation_is_output_size_valid_second();
+  bool isOutputSizeValid = isOutputSizeValidFirst && isOutputSizeValidSecond;
+  return isInputSizeValid && isOutputSizeValid;
+}
+
+bool filatov_tbb::GaussFilterHorizontal::run() {
+  internal_order_test();
+  applyKernel();
+  return true;
+}
+
+bool filatov_tbb::GaussFilterHorizontal::copyImageData() {
+  std::memcpy(output, image.data(), width * height * 3);
+  return true;
+}
+
+bool filatov_tbb::GaussFilterHorizontal::post_processing() {
+  internal_order_test();
+  return copyImageData();
+}
+
+void filatov_tbb::GaussFilterHorizontal::calculateGaussianValues(float sigma, float* normalizationFactor) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t row = -halfSize; row <= halfSize; row++) {
+    for (int64_t col = -halfSize; col <= halfSize; col++) {
+      double gaussianValue = std::exp(-(row * row + col * col) / (2 * sigma * sigma));
+      kernel[row + halfSize][col + halfSize] = gaussianValue;
+      *normalizationFactor += gaussianValue;
+    }
+  }
+}
+
+void filatov_tbb::GaussFilterHorizontal::normalizeKernel(float normalizationFactor) {
+  for (uint32_t row = 0; row < kSize; row++) {
+    for (uint32_t col = 0; col < kSize; col++) {
+      kernel[row][col] /= normalizationFactor;
+    }
+  }
+}
+
+void filatov_tbb::GaussFilterHorizontal::makeKernel(float sigma) {
+  float normalizationFactor = 0;
+  calculateGaussianValues(sigma, &normalizationFactor);
+  normalizeKernel(normalizationFactor);
+}
+void filatov_tbb::GaussFilterHorizontal::applyKernel() {
+  tbb::parallel_for(tbb::blocked_range2d<uint32_t>(0, height, 0, width), [&](const tbb::blocked_range2d<uint32_t>& r) {
+    for (uint32_t i = r.rows().begin(); i != r.rows().end(); ++i) {
+      for (uint32_t j = r.cols().begin(); j != r.cols().end(); ++j) {
+        size_t index = i * width + j;
+        image[index] = calculateNewPixelColor(i, j);
+      }
+    }
+  });
+}
+
+void filatov_tbb::GaussFilterHorizontal::calculateSingleColorComponent(uint8_t neighborColor, float kernelValue,
+                                                                       float* newColorComponent) {
+  *newColorComponent += neighborColor * kernelValue;
+}
+
+void filatov_tbb::GaussFilterHorizontal::calculateColorsComponents(Color* neighborColor, int64_t k, int64_t l,
+                                                                   int64_t halfSize, ColorF* color) {
+  calculateSingleColorComponent(neighborColor->R, kernel[k + halfSize][l + halfSize], &color->R);
+  calculateSingleColorComponent(neighborColor->G, kernel[k + halfSize][l + halfSize], &color->G);
+  calculateSingleColorComponent(neighborColor->B, kernel[k + halfSize][l + halfSize], &color->B);
+}
+
+void filatov_tbb::GaussFilterHorizontal::calculateColorComponentsForRow(int64_t l, size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t k = -halfSize; k <= halfSize; k++) {
+    auto idX = clamp<size_t>((x + k), 0, width - 1);
+    auto idY = clamp<size_t>((y + l), 0, height - 1);
+    Color neighborColor = image[idX * width + idY];
+    calculateColorsComponents(&neighborColor, k, l, halfSize, color);
+  }
+}
+
+void filatov_tbb::GaussFilterHorizontal::calculateColorComponents(size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t l = -halfSize; l <= halfSize; l++) {
+    calculateColorComponentsForRow(l, x, y, color);
+  }
+}
+
+filatov_tbb::Color filatov_tbb::GaussFilterHorizontal::calculateCeilColorF(ColorF preparedColor) {
+  Color resultColor;
+  resultColor.R = (uint8_t)std::ceil(preparedColor.R);
+  resultColor.G = (uint8_t)std::ceil(preparedColor.G);
+  resultColor.B = (uint8_t)std::ceil(preparedColor.B);
+  return resultColor;
+}
+
+filatov_tbb::Color filatov_tbb::GaussFilterHorizontal::calculateNewPixelColor(size_t x, size_t y) {
+  ColorF preparedColor;
+  calculateColorComponents(x, y, &preparedColor);
+  return calculateCeilColorF(preparedColor);
+}
+
+template <typename T>
+T filatov_tbb::GaussFilterHorizontal::clamp(const T& val, const T& min, const T& max) {
+  if (val < min) {
+    return min;
+  }
+  if (val > max) {
+    return max;
+  }
+  return val;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Filatov Maxim
+#include "stl/filatov_m_linear_image_filtering_stl/include/ops_stl.hpp"
+
+#include <cstdint>
+
+filatov_stl::Color::Color() { R = G = B = 0; }
+
+filatov_stl::ColorF::ColorF() { R = G = B = .0f; }
+
+void filatov_stl::GaussFilterHorizontal::initializeData() {
+  input = taskData->inputs[0];
+  output = taskData->outputs[0];
+  width = taskData->inputs_count[0];
+  height = taskData->inputs_count[1];
+}
+
+void filatov_stl::GaussFilterHorizontal::copyInputToImage() {
+  image.resize(width * height * 3);
+  std::memcpy(image.data(), input, width * height * 3);
+}
+
+bool filatov_stl::GaussFilterHorizontal::pre_processing() {
+  internal_order_test();
+  initializeData();
+  copyInputToImage();
+  makeKernel();
+  return true;
+}
+
+bool filatov_stl::GaussFilterHorizontal::validation_is_input_size_valid() {
+  return taskData->inputs_count[0] >= 3 && taskData->inputs_count[1] >= 3;
+}
+
+bool filatov_stl::GaussFilterHorizontal::validation_is_output_size_valid_first() {
+  return taskData->outputs_count[0] == taskData->inputs_count[0];
+}
+
+bool filatov_stl::GaussFilterHorizontal::validation_is_output_size_valid_second() {
+  return taskData->outputs_count[1] == taskData->inputs_count[1];
+}
+
+bool filatov_stl::GaussFilterHorizontal::validation() {
+  internal_order_test();
+  bool isInputSizeValid = validation_is_input_size_valid();
+  if (!isInputSizeValid) {
+    std::cerr << "Error: incorrect input data size." << std::endl;
+  }
+
+  bool isOutputSizeValidFirst = validation_is_output_size_valid_first();
+  if (!isOutputSizeValidFirst) {
+    std::cerr << "Error: incorrect output data size (first parameter)." << std::endl;
+  }
+
+  bool isOutputSizeValidSecond = validation_is_output_size_valid_second();
+  if (!isOutputSizeValidSecond) {
+    std::cerr << "Error: incorrect output data size (second parameter)." << std::endl;
+  }
+
+  bool isOutputSizeValid = isOutputSizeValidFirst && isOutputSizeValidSecond;
+  return isInputSizeValid && isOutputSizeValid;
+}
+
+bool filatov_stl::GaussFilterHorizontal::run() {
+  internal_order_test();
+  applyKernel();
+  return true;
+}
+
+bool filatov_stl::GaussFilterHorizontal::copyImageData() {
+  std::memcpy(output, image.data(), width * height * 3);
+  return true;
+}
+
+bool filatov_stl::GaussFilterHorizontal::post_processing() {
+  internal_order_test();
+  return copyImageData();
+}
+
+void filatov_stl::GaussFilterHorizontal::calculateGaussianValues(float sigma, float* normalizationFactor) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t row = -halfSize; row <= halfSize; row++) {
+    for (int64_t col = -halfSize; col <= halfSize; col++) {
+      double gaussianValue = std::exp(-(row * row + col * col) / (2 * sigma * sigma));
+      kernel[row + halfSize][col + halfSize] = gaussianValue;
+      *normalizationFactor += gaussianValue;
+    }
+  }
+}
+
+void filatov_stl::GaussFilterHorizontal::normalizeKernel(float normalizationFactor) {
+  for (uint32_t row = 0; row < kSize; row++) {
+    for (uint32_t col = 0; col < kSize; col++) {
+      kernel[row][col] /= normalizationFactor;
+    }
+  }
+}
+
+void filatov_stl::GaussFilterHorizontal::makeKernel(float sigma) {
+  float normalizationFactor = 0;
+  calculateGaussianValues(sigma, &normalizationFactor);
+  normalizeKernel(normalizationFactor);
+}
+
+void filatov_stl::GaussFilterHorizontal::applyKernel() {
+  size_t num_threads = std::thread::hardware_concurrency();
+  size_t part_size = image.size() / num_threads;
+  std::vector<std::thread> threads;
+
+  for (size_t i = 0; i < num_threads; ++i) {
+    size_t start = i * part_size;
+    size_t end = (i == num_threads - 1) ? image.size() : (i + 1) * part_size;
+    threads.emplace_back(&GaussFilterHorizontal::applyKernelPart, this, start, end);
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
+}
+
+void filatov_stl::GaussFilterHorizontal::applyKernelPart(size_t start, size_t end) {
+  for (size_t index = start; index < end; ++index) {
+    uint32_t i = index / width;
+    uint32_t j = index % width;
+    image[index] = calculateNewPixelColor(i, j);
+  }
+}
+
+void filatov_stl::GaussFilterHorizontal::calculateSingleColorComponent(uint8_t neighborColor, float kernelValue,
+                                                                       float* newColorComponent) {
+  *newColorComponent += neighborColor * kernelValue;
+}
+
+void filatov_stl::GaussFilterHorizontal::calculateColorsComponents(Color* neighborColor, int64_t k, int64_t l,
+                                                                   int64_t halfSize, ColorF* color) {
+  calculateSingleColorComponent(neighborColor->R, kernel[k + halfSize][l + halfSize], &color->R);
+  calculateSingleColorComponent(neighborColor->G, kernel[k + halfSize][l + halfSize], &color->G);
+  calculateSingleColorComponent(neighborColor->B, kernel[k + halfSize][l + halfSize], &color->B);
+}
+
+void filatov_stl::GaussFilterHorizontal::calculateColorComponentsForRow(int64_t l, size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t k = -halfSize; k <= halfSize; k++) {
+    auto idX = clamp<size_t>((x + k), 0, width - 1);
+    auto idY = clamp<size_t>((y + l), 0, height - 1);
+    Color neighborColor = image[idX * width + idY];
+    calculateColorsComponents(&neighborColor, k, l, halfSize, color);
+  }
+}
+
+void filatov_stl::GaussFilterHorizontal::calculateColorComponents(size_t x, size_t y, ColorF* color) {
+  int64_t halfSize = kSize * .5f;
+  for (int64_t l = -halfSize; l <= halfSize; l++) {
+    calculateColorComponentsForRow(l, x, y, color);
+  }
+}
+
+filatov_stl::Color filatov_stl::GaussFilterHorizontal::calculateCeilColorF(ColorF preparedColor) {
+  Color resultColor;
+  resultColor.R = (uint8_t)std::ceil(preparedColor.R);
+  resultColor.G = (uint8_t)std::ceil(preparedColor.G);
+  resultColor.B = (uint8_t)std::ceil(preparedColor.B);
+  return resultColor;
+}
+
+filatov_stl::Color filatov_stl::GaussFilterHorizontal::calculateNewPixelColor(size_t x, size_t y) {
+  ColorF preparedColor;
+  calculateColorComponents(x, y, &preparedColor);
+  return calculateCeilColorF(preparedColor);
+}
+
+template <typename T>
+T filatov_stl::GaussFilterHorizontal::clamp(const T& val, const T& min, const T& max) {
+  return std::max(min, std::min(val, max));
+}
+\end{lstlisting}
+
+\end{document}
