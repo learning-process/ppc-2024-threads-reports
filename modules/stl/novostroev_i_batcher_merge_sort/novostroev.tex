@@ -1,0 +1,919 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Поразрядная сортировка для целых чисел с четно-нечетным слиянием Бэтчера.>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР2\\Новостроев И.Д.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В условиях быстрого развития вычислительных технологий эффективная сортировка целых чисел остается одним из ключевых аспектов оптимизации алгоритмов обработки данных. Поразрядная сортировка, особенно с применением четно-нечетного слияния Бэтчера, представляет собой мощный инструмент для упорядочивания массивов данных, обеспечивая стабильность и высокую производительность в широком диапазоне задач.
+
+\par Данная работа нацелена на разработку и анализ эффективности параллельного алгоритма поразрядной сортировки для целых чисел с использованием четно-нечетного слияния Бэтчера на системах с общей памятью. Четно-нечетное слияние Бэтчера представляет собой эффективный метод комбинирования отсортированных последовательностей, что позволяет существенно ускорить процесс сортировки в сравнении с традиционными методами.
+
+\par В рамках исследования будут изучены теоретические основы поразрядной сортировки и четно-нечетного слияния Бэтчера, описаны особенности параллельной реализации алгоритма с учетом горизонтального разбиения данных. Также будут проведены эксперименты для оценки эффективности и ускорения разработанного алгоритма на различных наборах данных и конфигурациях системы. Полученные результаты будут полезны для специалистов в области анализа данных, разработчиков программного обеспечения и исследователей, интересующихся оптимизацией сортировочных алгоритмов и параллельными вычислениями.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+\item Реализовать четыре версии алгоритма поразрядной сортировки для целых чисел с четно-нечетным слиянием Бэтчера:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии OMP (OpenMP)
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+\item Сравнить реализации и производительность версий.
+\item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Поразрядная сортировка с четно-нечетным слиянием Бэтчера является эффективным методом сортировки целых чисел. Она основывается на итеративном сравнении чисел по разрядам, начиная с младших и заканчивая старшими. В процессе сортировки используется метод четно-нечетного слияния Бэтчера, который позволяет параллельно сравнивать и обменивать элементы массива.
+
+\par \textbf{Алгоритм поразрядной сортировки для целых чисел с четно-нечетным слиянием Бэтчера:}
+
+\begin{enumerate}
+\item Инициализация двух указателей, по одному на каждый массив.
+\item Создание нового массива для хранения результатов слияния.
+\item Сравнение элементов, на которые указывают указатели, и добавление меньшего из них в результирующий массив.
+\item Продвижение указателя на элемент, который был добавлен в результирующий массив.
+\item Повторение шагов 3 и 4 до тех пор, пока не будут пройдены все элементы одного из массивов.
+\item Копирование оставшихся элементов из другого массива в результирующий массив.
+\end{enumerate}
+
+\newpage
+
+% Описание схемы распараллеливания
+\section*{Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм поразрядной сортировки с использованием четно-нечетного слияния Бэтчера состоит из следующих основных этапов, которые были распараллелены:}
+\begin{enumerate}
+\item Разделение входного массива на две части
+\item Сортировка частей массива в каждом потоке
+\item Четно-нечетное слияние отсортированных частей
+\end{enumerate}
+\vspace{2em}
+\par \textbf{На втором этапе (сортировка частей массива) было распараллелено:}
+\begin{enumerate}
+\item Сортировка четных индексов массива в одном потоке
+\item Сортировка нечетных индексов массива в другом потоке
+\end{enumerate}
+\vspace{1em}
+\par Различные реализации алгоритма с использованием различных технологий, таких как SEQ, OMP, TBB и STL, распараллеливают те же самые этапы с разной степенью оптимизации и эффективности. В каждой реализации используются соответствующие директивы или функции для достижения параллельного выполнения, что способствует ускорению процесса сортировки и повышению общей производительности.
+
+\newpage
+
+
+% Описание OpenMP, TBB и STL версий
+\section*{Описание OpenMP, TBB и STL версий алгоритма}
+\par В различных версиях алгоритма поразрядной сортировки с четно-нечетным слиянием Бэтчера, использующих параллельные вычисления, основные этапы и код, подлежащий распараллеливанию, остаются неизменными. Однако различия между версиями, такими как OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), проявляются в методах параллелизации и их реализации.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+\item В OpenMP были использованы директивы:
+\vspace{0.5em}
+\begin{enumerate}
+\item[1.1] \begin{verbatim}
+#pragma omp parallel for
+\end{verbatim}
+
+для распараллеливания основного цикла сортировки, который включает в себя поразрядные операции и четно-нечетное слияние Бэтчера.
+\end{enumerate}
+\item В TBB было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[2.1] \begin{verbatim}
+tbb::parallel_for(tbb::blocked_range<int>(0, n),
+[&](const tbb::blocked_range<int>& r) { ... })
+\end{verbatim}
+для распараллеливания операций слияния Бэтчера и поразрядной сортировки в целом.
+\end{enumerate}
+\item В STL было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[3.1] \begin{verbatim}
+std::thread
+\end{verbatim}
+для создания потоков, которые выполняют различные этапы алгоритма поразрядной сортировки и слияния Бэтчера.
+\item[3.2] \begin{verbatim}
+std::thread::join
+\end{verbatim}
+для ожидания завершения выполнения всех потоков.
+\end{enumerate}
+\end{enumerate}
+
+В каждой из трех версий основными распараллеливаемыми участками кода являются:
+\begin{enumerate}
+\item Поразрядные операции сортировки (например, сортировка по битам)
+\item Четно-нечетное слияние Бэтчера для улучшения параллельной сортировки
+\end{enumerate}
+
+Различия между версиями проявляются в способах организации параллельных вычислений и управлении потоками для достижения эффективности и масштабируемости алгоритма на многопроцессорных системах.
+
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма поразрядной сортировки целых чисел с четно-нечетным слиянием Бэтчера была проверена путем сравнения результатов сортировки с эталонными данными.
+\par Тестирование производительности проводилось на наборах данных различных размеров, начиная от 100 элементов и до 100,000 элементов.
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz, 3600 МГц, 8 ядер / 8 потоков
+\item Оперативная память: 16 ГБ
+\item Операционная система: Windows 10
+\end{itemize}
+\par Количество потоков для параллельных версий алгоритма было ограничено до 4.
+\par В таблице приведены средние значения времени сортировки массива размером 100,000 элементов за 10 запусков.
+\par \textbf{Результаты экспериментов:}
+\begin{center}
+\begin{tabular}{ ||c | c | c ||  }
+    \hline Версия алгоритма & pipeline (сек) & task (сек)\\ 
+    \hline Последовательная & 1.5625411100 & 1.5225412400 \\
+    \hline OMP & 0.8123264209 & 0.7891151349 \\
+    \hline TBB & 0.7841456712 & 0.7615942547 \\ 
+    \hline STL & 0.8345168910 & 0.8156216933 \\ 
+    \hline
+\end{tabular}\\[5mm]
+\end{center}
+
+\newpage
+
+% Анализ результатов
+\section*{Анализ результатов}
+\addcontentsline{toc}{section}{Анализ результатов}
+\par Для оценки эффективности параллельных алгоритмов поразрядной сортировки с четно-нечетным слиянием Бэтчера, были рассчитаны коэффициенты ускорения и эффективности. Расчеты основаны на среднем времени выполнения алгоритмов для массива размером 100,000 элементов.
+
+\par Коэффициент ускорения \( p_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ p_i = \frac{T_{si}}{T_{pi}} $$
+где \( T_{si} \) - время выполнения последовательного алгоритма, а \( T_{pi} \) - время выполнения параллельного алгоритма для \( i \)-й версии.
+
+\par Эффективность \( e_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ e_i = \frac{p_i}{N} $$
+где \( N \) - количество потоков (в данном случае 4).
+
+\par Используя данные из предыдущей таблицы, получаем следующие результаты для двух различных типов задач: pipeline и task.
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{1.5625411100}{0.8123264209} \approx 1.92 \) & \( \frac{1.92}{4} \approx 0.48 \) \\
+ TBB & \( \frac{1.5625411100}{0.7841456712} \approx 1.99 \) & \( \frac{1.99}{4} \approx 0.4975 \) \\
+ STL & \( \frac{1.5625411100}{0.8345168910} \approx 1.87 \) & \( \frac{1.87}{4} \approx 0.4675 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{1.5225412400}{0.7891151349} \approx 1.93 \) & \( \frac{1.93}{4} \approx 0.4825 \) \\
+ TBB & \( \frac{1.5225412400}{0.7615942547} \approx 2.00 \) & \( \frac{2.00}{4} \approx 0.50 \) \\
+ STL & \( \frac{1.5225412400}{0.8156216933} \approx 1.87 \) & \( \frac{1.87}{4} \approx 0.4675 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Выводы}:
+\begin{itemize}
+    \item В обоих типах задач (pipeline и task) наилучшее ускорение и эффективность показала версия TBB.
+    \item Наименьшее ускорение и эффективность демонстрирует STL версия.
+    \item Распараллеливание алгоритма привело к ускорению его выполнения почти в два раза по сравнению с последовательной версией.
+\end{itemize}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В ходе данной лабораторной работы были успешно реализованы и проанализированы как последовательный, так и параллельные алгоритмы поразрядной сортировки целых чисел с четно-нечетным слиянием Бэтчера. Экспериментальные замеры производительности подтвердили, что распараллеливание алгоритма значительно увеличивает его эффективность, особенно на системах с многопоточной обработкой.
+
+\par Оценка удобства использования различных технологий параллелизма показала, что, несмотря на некоторые накладные расходы, TBB и OpenMP предоставляют мощные инструменты для оптимизации производительности. STL, хотя и оказался менее эффективным в данном контексте, все же предоставляет ценные возможности для упрощения многопоточного программирования.
+
+\par Ранжирование технологий по удобству использования, на основе личного опыта и результатов тестирования, выглядит следующим образом:
+\begin{itemize}
+    \item[1.] TBB — за его высокую производительность и удобство в управлении потоками.
+    \item[2.] OpenMP — за простоту внедрения и хорошую поддержку компиляторами.
+    \item[3.] STL — за его доступность и интеграцию с стандартной библиотекой C++.
+\end{itemize}
+
+\par В заключение, результаты данной работы могут служить отправной точкой для дальнейших исследований в области параллельных вычислений и оптимизации алгоритмов сортировки.
+
+\newpage
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью".
+    \item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с.
+    \item Bitonic Sort and Batcher's Merge. Доступно: \url{https://www.eecis.udel.edu/~cavazos/cisc879-spring2009/bitonic-sort.pdf}
+    \item Introduction to Radix Sort. Доступно: \url{https://www.geeksforgeeks.org/radix-sort/}
+\end{enumerate}
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Novostroev Ivan
+
+#include "stl/novostroev_i_task1_batcher_merge_sort/include/ops_seq.hpp"
+
+using namespace std::chrono_literals;
+
+std::vector<int> mergeElements(std::vector<int>& vec0, std::vector<int>& vec1, std::vector<int>& vec2, size_t idx1, size_t idx2, size_t increment, int modification) {
+  std::vector<int> mergedVec = vec0;
+  size_t idx = 0;
+
+  if ((modification == 0) || (modification == 1)) {
+    size_t len1 = vec1.size();
+    size_t len2 = vec2.size();
+
+    while ((idx1 < len1) && (idx2 < len2)) {
+      if (vec1[idx1] <= vec2[idx2]) {
+        if (idx < mergedVec.size()) {
+          mergedVec[idx] = vec1[idx1];
+          idx1 += increment;
+        }
+      } else {
+        if (idx < mergedVec.size()) {
+          mergedVec[idx] = vec2[idx2];
+          idx2 += increment;
+        }
+      }
+      idx++;
+    }
+
+    while (idx1 < len1) {
+      if (idx < mergedVec.size()) {
+        mergedVec[idx] = vec1[idx1];
+        idx1 += increment;
+        idx++;
+      }
+    }
+
+    while (idx2 < len2) {
+      if (idx < mergedVec.size()) {
+        mergedVec[idx] = vec2[idx2];
+        idx2 += increment;
+        idx++;
+      }
+    }
+
+    return mergedVec;
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> getOddElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 1;
+  size_t idx2 = 1;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 0);
+}
+
+std::vector<int> getEvenElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2 + vec1.size() % 2 + vec2.size() % 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 1);
+}
+
+std::vector<int> mergeVectors(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() + vec2.size());
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 1, 2);
+}
+
+std::vector<int> batcherSort(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+  std::vector<int> oddElements = getOddElements(vec1, vec2);
+  std::vector<int> evenElements = getEvenElements(vec1, vec2);
+  std::vector<int> mergedVec = mergeVectors(evenElements, oddElements);
+
+  if (!is_sorted(mergedVec.begin(), mergedVec.end())) {
+    std::vector<int> leftHalf(mergedVec.begin(), mergedVec.begin() + mergedVec.size() / 2);
+    std::vector<int> rightHalf(mergedVec.begin() + mergedVec.size() / 2, mergedVec.end());
+    return batcherSort(leftHalf, rightHalf);
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> prepareInput(std::vector<int>& in, std::vector<int>& vec1, std::vector<int>& vec2) {
+  vec1.resize(in.size() / 2);
+  vec2.resize(in.size() / 2);
+
+  for (size_t idx = 0; idx < (in.size() / 2); idx++) {
+    vec1[idx] = in[idx];
+    vec2[idx] = in[(in.size() / 2) + idx];
+  }
+  return in;
+}
+
+bool validateSort(std::vector<int>& vec1, std::vector<int>& vec2) {
+  return (is_sorted(vec1.begin(), vec1.end()) && is_sorted(vec2.begin(), vec2.end()));
+}
+
+std::vector<int> runBatcherSort(std::vector<int>& vec1, std::vector<int>& vec2) { return batcherSort(vec1, vec2); }
+
+void copyOutput(std::vector<int>& out, int* taskDataOutput) {
+  copy(out.begin(), out.end(), reinterpret_cast<int*>(taskDataOutput));
+}
+
+bool BatcherMergeSortSEQ::pre_processing() {
+  internal_order_test();
+  in = std::vector<int>(taskData->inputs_count[0]);
+  auto* tmp_ptr_A = reinterpret_cast<int*>(taskData->inputs[0]);
+  for (size_t idx = 0; idx < taskData->inputs_count[0]; idx++) {
+    in[idx] = tmp_ptr_A[idx];
+  }
+  prepareInput(in, vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortSEQ::validation() {
+  internal_order_test();
+  return validateSort(vec1, vec2);
+}
+
+bool BatcherMergeSortSEQ::run() {
+  internal_order_test();
+  out = runBatcherSort(vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortSEQ::post_processing() {
+  internal_order_test();
+  copyOutput(out, reinterpret_cast<int*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Novostroev Ivan
+
+#include "omp/novostroev_i_task2_batcher_merge_sort/include/ops_omp.hpp"
+
+#include <omp.h>
+
+using namespace std::chrono_literals;
+
+std::vector<int> mergeElements(std::vector<int>& vec0, std::vector<int>& vec1, std::vector<int>& vec2, size_t& idx1, size_t& idx2, size_t increment, int modification, int threads_count) {
+  std::vector<int> mergedVec = vec0;
+  size_t idx = 0;
+
+  if ((modification == 0) || (modification == 1)) {
+    while ((idx1 < vec1.size()) && (idx2 < vec2.size())) {
+      if (vec1[idx1] <= vec2[idx2]) {
+        mergedVec[idx] = vec1[idx1];
+        idx1 += increment;
+      } else {
+        mergedVec[idx] = vec2[idx2];
+        idx2 += increment;
+      }
+      idx++;
+    }
+    if (idx1 >= vec1.size()) {
+#pragma omp parallel for num_threads(threads_count)
+      for (int i = idx2; i < static_cast<int>(vec2.size()); i += increment) {
+        mergedVec[idx] = vec2[i];
+        idx++;
+      }
+    } else {
+#pragma omp parallel for num_threads(threads_count)
+      for (int i = idx1; i < static_cast<int>(vec1.size()); i += increment) {
+        mergedVec[idx] = vec1[i];
+        idx++;
+      }
+    }
+  } else {
+    while ((idx1 < vec1.size()) && (idx2 < vec2.size())) {
+      mergedVec[idx] = vec1[idx1];
+      mergedVec[idx + 1] = vec2[idx2];
+      idx += 2;
+      idx1++;
+      idx2++;
+    }
+    if ((idx2 >= vec2.size()) && (idx1 < vec1.size())) {
+#pragma omp parallel for num_threads(threads_count)
+      for (int i = idx; i < static_cast<int>(mergedVec.size()); i += increment) {
+        mergedVec[i] = vec1[idx1];
+        idx1++;
+      }
+    }
+#pragma omp parallel for num_threads(threads_count)
+    for (int i = 0; i < static_cast<int>(mergedVec.size() - 1); i += increment) {
+      if (mergedVec[i] > mergedVec[i + 1]) {
+        std::swap(mergedVec[i], mergedVec[i + 1]);
+      }
+    }
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> getOddElements(std::vector<int> vec1, std::vector<int> vec2, int threads_count = 4) {
+  size_t idx1 = 1;
+  size_t idx2 = 1;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 0, threads_count);
+}
+
+std::vector<int> getEvenElements(std::vector<int> vec1, std::vector<int> vec2, int threads_count = 4) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2 + vec1.size() % 2 + vec2.size() % 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 1, threads_count);
+}
+
+std::vector<int> mergeVectors(std::vector<int> vec1, std::vector<int> vec2, int threads_count = 4) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() + vec2.size());
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 1, 2, threads_count);
+}
+
+std::vector<int> batcherSort(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+  std::vector<int> oddElements = getOddElements(vec1, vec2);
+  std::vector<int> evenElements = getEvenElements(vec1, vec2);
+  std::vector<int> mergedVec = mergeVectors(evenElements, oddElements);
+
+  if (!is_sorted(mergedVec.begin(), mergedVec.end())) {
+    std::vector<int> leftHalf(mergedVec.begin(), mergedVec.begin() + mergedVec.size() / 2);
+    std::vector<int> rightHalf(mergedVec.begin() + mergedVec.size() / 2, mergedVec.end());
+    return batcherSort(leftHalf, rightHalf);
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> prepareInput(std::vector<int>& in, std::vector<int>& vec1, std::vector<int>& vec2) {
+  vec1.resize(in.size() / 2);
+  vec2.resize(in.size() / 2);
+
+  for (size_t idx = 0; idx < (in.size() / 2); idx++) {
+    vec1[idx] = in[idx];
+    vec2[idx] = in[(in.size() / 2) + idx];
+  }
+  return in;
+}
+
+bool validateSort(std::vector<int>& vec1, std::vector<int>& vec2) {
+  return (is_sorted(vec1.begin(), vec1.end()) && is_sorted(vec2.begin(), vec2.end()));
+}
+
+std::vector<int> runBatcherSort(std::vector<int>& vec1, std::vector<int>& vec2) { return batcherSort(vec1, vec2); }
+
+void copyOutput(std::vector<int>& out, int* taskDataOutput) {
+  copy(out.begin(), out.end(), reinterpret_cast<int*>(taskDataOutput));
+}
+
+bool BatcherMergeSortOMP::pre_processing() {
+  internal_order_test();
+  in = std::vector<int>(taskData->inputs_count[0]);
+  auto* tmp_ptr_A = reinterpret_cast<int*>(taskData->inputs[0]);
+  for (size_t idx = 0; idx < taskData->inputs_count[0]; idx++) {
+    in[idx] = tmp_ptr_A[idx];
+  }
+  prepareInput(in, vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortOMP::validation() {
+  internal_order_test();
+  return validateSort(vec1, vec2);
+}
+
+bool BatcherMergeSortOMP::run() {
+  internal_order_test();
+  out = runBatcherSort(vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortOMP::post_processing() {
+  internal_order_test();
+  copyOutput(out, reinterpret_cast<int*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Novostroev Ivan
+
+#include "tbb/novostroev_i_task3_batcher_merge_sort/include/ops_tbb.hpp"
+
+#include <oneapi/tbb.h>
+
+using namespace std::chrono_literals;
+
+std::mutex idx_mutex;
+
+std::vector<int> mergeElements(std::vector<int>& vec0, std::vector<int>& vec1, std::vector<int>& vec2, size_t idx1, size_t idx2, size_t increment, int modification) {
+  std::vector<int> mergedVec = vec0;
+  size_t idx = 0;
+
+  if ((modification == 0) || (modification == 1)) {
+    size_t len1 = vec1.size();
+    size_t len2 = vec2.size();
+
+    tbb::parallel_invoke(
+        [&] {
+          while ((idx1 < len1) && (idx2 < len2)) {
+            if (vec1[idx1] <= vec2[idx2]) {
+              if (idx < mergedVec.size()) {
+                mergedVec[idx] = vec1[idx1];
+                idx1 += increment;
+              }
+            } else {
+              if (idx < mergedVec.size()) {
+                mergedVec[idx] = vec2[idx2];
+                idx2 += increment;
+              }
+            }
+            idx++;
+          }
+        },
+        [&] {
+          while (idx1 < len1) {
+            if (idx < mergedVec.size()) {
+              mergedVec[idx] = vec1[idx1];
+              idx1 += increment;
+              idx++;
+            }
+          }
+        },
+        [&] {
+          while (idx2 < len2) {
+            if (idx < mergedVec.size()) {
+              mergedVec[idx] = vec2[idx2];
+              idx2 += increment;
+              idx++;
+            }
+          }
+        });
+
+    return mergedVec;
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> getOddElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 1;
+  size_t idx2 = 1;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 0);
+}
+
+std::vector<int> getEvenElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2 + vec1.size() % 2 + vec2.size() % 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 1);
+}
+
+std::vector<int> mergeVectors(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() + vec2.size());
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 1, 2);
+}
+
+std::vector<int> batcherSort(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+  std::vector<int> oddElements = getOddElements(vec1, vec2);
+  std::vector<int> evenElements = getEvenElements(vec1, vec2);
+  std::vector<int> mergedVec = mergeVectors(evenElements, oddElements);
+
+  if (!is_sorted(mergedVec.begin(), mergedVec.end())) {
+    std::vector<int> leftHalf(mergedVec.begin(), mergedVec.begin() + mergedVec.size() / 2);
+    std::vector<int> rightHalf(mergedVec.begin() + mergedVec.size() / 2, mergedVec.end());
+    return batcherSort(leftHalf, rightHalf);
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> prepareInput(std::vector<int>& in, std::vector<int>& vec1, std::vector<int>& vec2) {
+  vec1.resize(in.size() / 2);
+  vec2.resize(in.size() / 2);
+
+  for (size_t idx = 0; idx < (in.size() / 2); idx++) {
+    vec1[idx] = in[idx];
+    vec2[idx] = in[(in.size() / 2) + idx];
+  }
+  return in;
+}
+
+bool validateSort(std::vector<int>& vec1, std::vector<int>& vec2) {
+  return (is_sorted(vec1.begin(), vec1.end()) && is_sorted(vec2.begin(), vec2.end()));
+}
+
+std::vector<int> runBatcherSort(std::vector<int>& vec1, std::vector<int>& vec2) { return batcherSort(vec1, vec2); }
+
+void copyOutput(std::vector<int>& out, int* taskDataOutput) {
+  copy(out.begin(), out.end(), reinterpret_cast<int*>(taskDataOutput));
+}
+
+bool BatcherMergeSortTBB::pre_processing() {
+  internal_order_test();
+  in = std::vector<int>(taskData->inputs_count[0]);
+  auto* tmp_ptr_A = reinterpret_cast<int*>(taskData->inputs[0]);
+  for (size_t idx = 0; idx < taskData->inputs_count[0]; idx++) {
+    in[idx] = tmp_ptr_A[idx];
+  }
+  prepareInput(in, vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortTBB::validation() {
+  internal_order_test();
+  return validateSort(vec1, vec2);
+}
+
+bool BatcherMergeSortTBB::run() {
+  internal_order_test();
+  out = runBatcherSort(vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortTBB::post_processing() {
+  internal_order_test();
+  copyOutput(out, reinterpret_cast<int*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Novostroev Ivan
+
+#include "stl/novostroev_i_task4_batcher_merge_sort/include/ops_stl.hpp"
+
+using namespace std::chrono_literals;
+
+std::mutex idx_mutex;
+
+std::vector<int> mergeElements(std::vector<int>& vec0, std::vector<int>& vec1, std::vector<int>& vec2, size_t idx1, size_t idx2, size_t increment, int modification) {
+  std::vector<int> mergedVec = vec0;
+  size_t idx = 0;
+
+  if ((modification == 0) || (modification == 1)) {
+    size_t len1 = vec1.size();
+    size_t len2 = vec2.size();
+
+    auto merge1 = [&] {
+      while ((idx1 < len1) && (idx2 < len2)) {
+        if (vec1[idx1] <= vec2[idx2]) {
+          if (idx < mergedVec.size()) {
+            mergedVec[idx] = vec1[idx1];
+            idx1 += increment;
+          }
+        } else {
+          if (idx < mergedVec.size()) {
+            mergedVec[idx] = vec2[idx2];
+            idx2 += increment;
+          }
+        }
+        idx++;
+      }
+    };
+
+    auto merge2 = [&] {
+      while (idx1 < len1) {
+        if (idx < mergedVec.size()) {
+          mergedVec[idx] = vec1[idx1];
+          idx1 += increment;
+          idx++;
+        }
+      }
+    };
+
+    auto merge3 = [&] {
+      while (idx2 < len2) {
+        if (idx < mergedVec.size()) {
+          mergedVec[idx] = vec2[idx2];
+          idx2 += increment;
+          idx++;
+        }
+      }
+    };
+
+    std::thread t1(merge1);
+    std::thread t2(merge2);
+    std::thread t3(merge3);
+
+    t1.join();
+    t2.join();
+    t3.join();
+
+    return mergedVec;
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> getOddElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 1;
+  size_t idx2 = 1;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 0);
+}
+
+std::vector<int> getEvenElements(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() / 2 + vec2.size() / 2 + vec1.size() % 2 + vec2.size() % 2);
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 2, 1);
+}
+
+std::vector<int> mergeVectors(std::vector<int> vec1, std::vector<int> vec2) {
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+  std::vector<int> mergedVec(vec1.size() + vec2.size());
+  return mergeElements(mergedVec, vec1, vec2, idx1, idx2, 1, 2);
+}
+
+std::vector<int> batcherSort(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+  std::vector<int> oddElements = getOddElements(vec1, vec2);
+  std::vector<int> evenElements = getEvenElements(vec1, vec2);
+  std::vector<int> mergedVec = mergeVectors(evenElements, oddElements);
+
+  if (!is_sorted(mergedVec.begin(), mergedVec.end())) {
+    std::vector<int> leftHalf(mergedVec.begin(), mergedVec.begin() + mergedVec.size() / 2);
+    std::vector<int> rightHalf(mergedVec.begin() + mergedVec.size() / 2, mergedVec.end());
+    return batcherSort(leftHalf, rightHalf);
+  }
+
+  return mergedVec;
+}
+
+std::vector<int> prepareInput(std::vector<int>& in, std::vector<int>& vec1, std::vector<int>& vec2) {
+  vec1.resize(in.size() / 2);
+  vec2.resize(in.size() / 2);
+
+  for (size_t idx = 0; idx < (in.size() / 2); idx++) {
+    vec1[idx] = in[idx];
+    vec2[idx] = in[(in.size() / 2) + idx];
+  }
+  return in;
+}
+
+bool validateSort(std::vector<int>& vec1, std::vector<int>& vec2) {
+  return (is_sorted(vec1.begin(), vec1.end()) && is_sorted(vec2.begin(), vec2.end()));
+}
+
+std::vector<int> runBatcherSort(std::vector<int>& vec1, std::vector<int>& vec2) { return batcherSort(vec1, vec2); }
+
+void copyOutput(std::vector<int>& out, int* taskDataOutput) {
+  copy(out.begin(), out.end(), reinterpret_cast<int*>(taskDataOutput));
+}
+
+bool BatcherMergeSortSTL::pre_processing() {
+  internal_order_test();
+  in = std::vector<int>(taskData->inputs_count[0]);
+  auto* tmp_ptr_A = reinterpret_cast<int*>(taskData->inputs[0]);
+  for (size_t idx = 0; idx < taskData->inputs_count[0]; idx++) {
+    in[idx] = tmp_ptr_A[idx];
+  }
+  prepareInput(in, vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortSTL::validation() {
+  internal_order_test();
+  return validateSort(vec1, vec2);
+}
+
+bool BatcherMergeSortSTL::run() {
+  internal_order_test();
+  out = runBatcherSort(vec1, vec2);
+  return true;
+}
+
+bool BatcherMergeSortSTL::post_processing() {
+  internal_order_test();
+  copyOutput(out, reinterpret_cast<int*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\end{document}
