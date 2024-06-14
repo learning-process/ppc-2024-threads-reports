@@ -1,0 +1,391 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{subfig}
+\usepackage{url}
+\usepackage{adjustbox}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{caption}
+\usepackage{multirow}
+\setminted[python]{breaklines}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage[left=25mm, top=20mm, right=15mm, bottom=20mm, nohead, footskip=10mm]{geometry}
+\usepackage{indentfirst}
+\linespread{1.3}
+\setlength{\parindent}{1.25cm}
+\newenvironment{longlisting}{\captionsetup{type=listing, name=Приложение}}{}
+\DeclareCaptionLabelSeparator{def}{. }
+\captionsetup[figure]{name=Рис., labelsep=def}
+\captionsetup[listing]{name=Приложение}
+\captionsetup[table]{name=Таблица, labelsep=def}
+\begin{document}
+\begin{center}
+    \large
+    МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ \\
+    Федеральное государственное автономное образовательное учреждение высшего образования \\
+    \textbf{«Нижегородский государственный университет им. Н.И. Лобачевского»}
+
+    \vspace{0.5cm}
+
+    \textbf{Институт информационных технологий, математики и механики}
+    
+    \vspace{0.5cm}
+    
+    Направление подготовки: <<01.03.02 Прикладная математика и информатика>>
+
+    \vspace{1.5cm}
+
+    \textbf{ОТЧЁТ}
+
+    по лабораторной работе
+
+    \vspace{0.5cm}
+
+    \textbf{на тему:}
+
+    \textbf{<<Параллельная реализация фильтра Гаусса (ядро 3 $\times$ 3, блочное разбиение).>>}
+\end{center}
+
+\vspace{2.5cm}
+
+\begin{flushright}
+    Выполнил: \\
+    студент группы 3821Б1ПМоп3 \\
+    Мухин Иван Сергеевич
+
+    \vspace{0.5cm}
+
+    Проверил: \\
+    аспирант \\
+    Нестеров Александр Юрьевич
+    
+    \vspace{0.5cm}
+
+\end{flushright}
+
+\vfill
+
+\begin{center}
+    Нижний Новгород \\
+    2024
+\end{center}
+\thispagestyle{empty}
+
+\newpage
+     
+    \tableofcontents % Вывод содержания
+
+\newpage
+\begin{center}
+\section*{Введение}
+\end{center}
+\addcontentsline{toc}{section}{Введение}
+\par
+В настоящее время различные алгоритмы обработки изображений находят широкое применение в современном мире. Однако с постепенным прогрессом изображения становятся всё более качественными и, как следствие, более <<весомые>>, что определенно влияет на скорость применения различных последовательных алгоритмов к ним, но вместе с течением прогресса улучшаются характеристики процессоров. Для оптимизации алгоритма его можно распараллелить, то есть распределить участки счета между вычислительными узлами.
+\par
+\textit{\textbf{Целью настоящей работы}} является рассмотрение различных библиотек для распараллеливания вычислений на примере фильтра Гаусса с ядром $3 \times 3$ и блочным разбиением изображения. Тогда можно поставить задачи:
+\begin{enumerate}
+	\item Сформулировать постановку задачи обработки изображения
+	\item Реализовать последовательную версию алгоритма.
+	\item Реализовать параллельную версию средствами OpenMP.
+	\item Реализовать параллельную версию средствами TBB.
+	\item Реализовать параллельную версию средствами STL.
+\end{enumerate}
+
+\newpage
+\section{Постановка задачи}
+\par
+Размытие по Гауссу в цифровой обработке изображений — способ размытия изображения с помощью функции Гаусса, названной в честь немецкого математика Карла Фридриха Гаусса.
+\par
+Этот эффект широко используется в графических редакторах для уменьшения шума изображения и снижения детализации. Визуальный эффект этого способа размытия напоминает эффект просмотра изображения через полупрозрачный экран, и отчётливо отличается от эффекта боке, создаваемого расфокусированным объективом или тенью объекта при обычном освещении.
+\par
+Размытие по Гауссу также используется в качестве этапа предварительной обработки в алгоритмах компьютерного зрения для улучшения структуры изображения в различных масштабах.
+Применение размытия по Гауссу к изображению математически аналогично свёртке изображения с помощью функции Гаусса. Оно также известно как двумерное преобразование Вейерштрасса. Циклическая свёртка (т. е. круговое размытие по рамке), напротив, более точно воспроизводит эффект боке.
+
+Поскольку преобразование Фурье функции Гаусса само является функцией Гаусса, применение размытия по Гауссу приводит к уменьшению высокочастотных компонентов изображения. Таким образом, размытие по Гауссу является фильтром нижних частот.
+
+
+\newpage
+\section{Программная реализация}
+Для хранения изображения создадим два вспомогательных класса: <<Pixel>>\hyperref[lst:pixel]{(Приложение 1)} и <<PixelMap>>\hyperref[lst:pixel_map]{(Приложение 2)}. В классе <<Pixel>> хранятся значения <<uint8\_t>>, принимающие значения от 0 до 255, которые отвечают за интенсивность цветов в формате RGB (красный, зеленый, синий). Класс <<PixelMap>> хранит ширину и высоту изображения, а их значения соответствуют количеству пикселей.
+\par
+Для расчета ядра фильтра используется функция <<create\_gaussian\_kernel>>\hyperref[lst:kernel]{(Приложение 3)}, которая непосредственно и размывает изображение путем применения экспоненциального преобразования, функция которого соответствует плотности нормального распределения. Далее используется функция для создания новых пикселей для изображения\hyperref[lst:apply]{(Приложение 4)}, которая применяет матричное ядро к матрице из пикселей идентичного размера.
+\par
+До текущего момента все вспомогательные классы являются общими для всех версий, меняться будет лишь применение фильтра к изображению. Для параллельной версии будет использоваться алгоритм блочного разбиения, сутью которого является разбиение изображения на блоки, по которым будут работать потоки и не пересекаться друг с другом.
+
+
+\subsection{Последовательная версия}
+\par
+В последовательной версии всё просто: применяем фильтр Гаусса с ядром $3 \times 3$ к каждому пикселю последовательно в цикле\hyperref[lst:seq]{(Приложение 5)}.
+
+
+\subsection{OpenMP версия}
+\textit{OpenMP}\cite{omp} -- открытый стандарт для распараллеливания программ на языках С, С++ и Фортран. Даёт описание совокупности директив компилятора, библиотечных процедур и переменных окружения, которые предназначены для программирования многопоточных приложений на многопроцессорных системах с общей памятью. OpenMP реализует параллельные вычисления с помощью многопоточности, в которой ведущий (англ. master) поток создаёт набор ведомых потоков, и задача распределяется между ними. Предполагается, что потоки выполняются параллельно на машине с несколькими процессорами (количество процессоров не обязательно должно быть больше или равно количеству потоков).
+\par
+Для распаралеллеливания будем использовать 4 потока. Алгоритм следующий:
+\begin{enumerate}
+	\item Разбиваем изображение на 4 независимых блока.
+	\item Создаем новый пиксель путем применения фильтра Гаусса. 
+\end{enumerate}
+\par
+Каждому блоку поставим в соответствие номер потока, поэтому переменная <<ThreadID>> будет для каждого потока своя\hyperref[lst:omp]{(Приложение 6)}. Соответственно, для каждого блока можно определить специфичную индексацию с помощью переменных <<i\_start>> и <<j\_start>>. Директива <<pragma omp parallel for private(ThreadID)>> является ключевой и распределяет работу между потоками.
+
+\subsection{TBB версия}
+\textit{Intel Threading Building Blocks (также известная как TBB)}\cite{tbb} — кроссплатформенная библиотека шаблонов C++, разработанная компанией Intel для параллельного программирования. Библиотека содержит алгоритмы и структуры данных, позволяющие программисту избежать многих сложностей, возникающих при использовании традиционных реализаций потоков, таких как POSIX Threads, Windows threads или Boost Threads, в которых создаются отдельные потоки исполнения, синхронизируемые и останавливаемые вручную. Библиотека TBB абстрагирует доступ к отдельным потокам.
+\par
+Алгоритм идентичен OpenMP, однако у TBB есть особенность, так называемое \textit{итерационное пространство}, с помощью него и будет определяться специфичный итератор, который будет распределять работу между потоками. Для начала нужно создать экземпляр класса <<task\_arena>>\hyperref[lst:tbb]{(Приложение 7)}, после чего в его метод <<execute>> передать итерационное пространство и лямбда-функцию, внутри которой будет применятся фильтр по схеме, которая аналогична OpenMP.
+
+
+\subsection{STL версия}
+Распараллелить также можно, используя C++ std::threads. Она включена в состав STL (Standard Template Library). Схема полностью аналогична описанным выше библиотекам, отличие состоит в том, что создается массив указателей, каждый из которых представляет из себя программный интерфейс для одного потока. После завершения вычислений производится <<join>> и массив потоков удаляется\hyperref[lst:stl]{(Приложение 8)}.
+\newpage
+\begin{center}
+\section*{Заключение}
+\end{center}
+\addcontentsline{toc}{section}{Заключение}
+Таким образом, в рамках данной работы были рассмотрены различные библиотеки для распараллеливания вычислений, которые были использованы для оптимизации алгоритма блочного разбиения фильтра Гаусса с ядром $3 \times 3$.
+
+\newpage
+\addcontentsline{toc}{section}{Список литературы}
+
+\begin{thebibliography}{9}
+	\bibitem{omp} OpenMP -- \url{https://www.openmp.org/}
+	\bibitem{tbb} Intel Threading Building Blocks -- \url{https://github.com/oneapi-src/oneTBB}
+\end{thebibliography}
+
+
+\newpage
+\section*{Приложения}
+\addcontentsline{toc}{section}{Приложения}
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+class Pixel {
+ public:
+  uint8_t r, g, b;
+
+  friend bool operator==(const Pixel& a, const Pixel& b);
+
+  friend bool operator!=(const Pixel& a, const Pixel& b) { return !(a == b); }
+};
+\end{minted}
+\caption{Программный интерфейс для пикселя}
+\label{lst:pixel}
+\end{longlisting}
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+class PixelMap {
+ private:
+  uint32_t n;
+  uint32_t m;
+
+  void set_data(uint8_t r, uint8_t g, uint8_t b);
+
+ public:
+  std::vector<Pixel> data;
+  PixelMap() : n(0), m(0){};
+
+  PixelMap(uint32_t n_, uint32_t m_, uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
+  uint32_t width() const { return n; }
+  uint32_t height() const { return m; }
+  ~PixelMap() = default;
+
+  Pixel& get_pixel(uint32_t i, uint32_t j);
+
+  const Pixel& get_pixel(uint32_t i, uint32_t j) const;
+
+  friend bool operator==(const PixelMap& a, const PixelMap& b);
+
+  friend bool operator!=(const PixelMap& a, const PixelMap& b) { return !(a == b); }
+};
+\end{minted}
+\caption{Программный интерфейс для изображения}
+\label{lst:pixel_map}
+\end{longlisting}
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+void create_gaussian_kernel() {
+  double sigm = 2.0;
+  double norm = 0.0;
+  for (int i = -rad; i <= rad; i++) {
+    for (int j = -rad; j <= rad; j++) {
+      kernel[i + rad][j + rad] = (std::exp(-(i * i + j * j) / (2 * sigm * sigm)));
+      norm += kernel[i + rad][j + rad];
+    }
+  }
+  for (uint32_t i = 0; i < kern_size; i++) {
+    for (uint32_t j = 0; j < kern_size; j++) {
+      kernel[i][j] /= norm;
+    }
+  }
+}
+\end{minted}
+\caption{Функция для создания ядра фильтра Гаусса}
+\label{lst:kernel}
+\end{longlisting}
+
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+Pixel get_new_pixel(uint32_t w, uint32_t h) {
+  double result_r = 0;
+  double result_b = 0;
+  double result_g = 0;
+  for (int i = -rad; i <= rad; i++) {
+    for (int j = -rad; j <= rad; j++) {
+      uint32_t new_h = h + j;
+      uint32_t new_w = w + i;
+      new_h = clamp(new_h, width_input);
+      Pixel neighborColor = image.get_pixel(new_w, new_h);
+      result_r += neighborColor.r * kernel[i + rad][j + rad];
+      result_b += neighborColor.b * kernel[i + rad][j + rad];
+      result_g += neighborColor.g * kernel[i + rad][j + rad];
+    }
+  }
+  return Pixel({(uint8_t)std::round(result_r),(uint8_t)std::round(result_g),
+                (uint8_t)std::round(result_b)});
+}
+\end{minted}
+\caption{Функция для применения фильтра Гаусса}
+\label{lst:apply}
+\end{longlisting}
+
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+void filter_to_image() {
+  for (uint32_t i = 0; i < width_input; i++) {
+    for (uint32_t j = 0; j < height_input; j++) {
+      image.get_pixel(i, j) = get_new_pixel(i, j);
+    }
+  }
+}
+\end{minted}
+\caption{Последовательная версия применения фильтра}
+\label{lst:seq}
+\end{longlisting}
+
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+void filter_to_image() {
+  int Size = static_cast<int>(width_input);
+  int GridThreadsNum = 4;
+  int ThreadID;
+  int GridSize = static_cast<int>(std::sqrt(static_cast<double>(GridThreadsNum)));
+  int BlockSize = Size / GridSize;
+  omp_set_num_threads(GridThreadsNum);
+#pragma omp parallel private(ThreadID)
+  {
+    ThreadID = omp_get_thread_num();
+    int i_start = static_cast<uint32_t>((ThreadID / GridSize) * BlockSize);
+    int j_start = static_cast<uint32_t>((ThreadID % GridSize) * BlockSize);
+    for (int i = 0; i < BlockSize; i++) {
+      for (int j = 0; j < BlockSize; j++) {
+        auto ii = static_cast<uint32_t>(i);
+        auto jj = static_cast<uint32_t>(j);
+        image.get_pixel(ii + i_start, jj + j_start) = get_new_pixel(ii + i_start, jj + j_start);
+      }
+    }
+  }
+}
+\end{minted}
+\caption{OpenMP версия применения фильтра}
+\label{lst:omp}
+\end{longlisting}
+
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+void filter_to_image() {
+  int GridSize = static_cast<int>(std::sqrt(static_cast<double>(4)));
+  int BlockSize = width_input / GridSize;
+  tbb::task_arena arena(4);
+  arena.execute([&] {
+    tbb::parallel_for(tbb::blocked_range<uint32_t>(0, 3), [&](const tbb::blocked_range<uint32_t>& r) {
+      for (uint32_t k = r.begin(); k < r.end(); k++) {
+        auto thread_id = tbb::this_task_arena::current_thread_index();
+        auto i_start = static_cast<uint32_t>((thread_id / GridSize) * BlockSize);
+        auto j_start = static_cast<uint32_t>((thread_id % GridSize) * BlockSize);
+        for (int i = 0; i < BlockSize; i++) {
+          for (int j = 0; j < BlockSize; j++) {
+            image.get_pixel(i + i_start, j + j_start) = get_new_pixel(i + i_start, j + j_start);
+          }
+        }
+      }
+    });
+  });
+}
+\end{minted}
+\caption{TBB версия применения фильтра}
+\label{lst:tbb}
+\end{longlisting}
+
+
+
+\begin{longlisting}
+\begin{minted}[frame=lines,framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos]{cpp}
+void filter_to_image() {
+  int num_threads = 4;
+  auto* threads = new std::thread[num_threads];
+  int BlockSize = width_input / 2;
+  for (int k = 0; k < num_threads; k++) {
+    auto i_start = static_cast<uint32_t>((k / 2) * BlockSize);
+    auto j_start = static_cast<uint32_t>((k % 2) * BlockSize);
+    threads[k] = std::thread([this, BlockSize, i_start, j_start]() {
+      for (uint32_t i = 0; i < static_cast<uint32_t>(BlockSize); i++) {
+        for (uint32_t j = 0; j < static_cast<uint32_t>(BlockSize); j++) {
+          image.get_pixel(i + i_start, j + j_start) = get_new_pixel(i + i_start, j + j_start);
+        }
+      }
+    });
+  }
+  for (int i = 0; i < num_threads; i++) {
+    threads[i].join();
+  }
+  delete[] threads;
+}
+\end{minted}
+\caption{STL версия применения фильтра}
+\label{lst:stl}
+\end{longlisting}
+
+
+
+
+
+
+
+
+\end{document}
