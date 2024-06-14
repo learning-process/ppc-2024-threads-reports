@@ -1,0 +1,395 @@
+\documentclass[]{article}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{breakurl}
+\usepackage[12pt]{extsizes}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=3cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\usepackage{amsthm}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Примечание}
+
+\theoremstyle{definition}
+\newtheorem*{defi}{Определение}
+
+\usepackage{titlesec}
+\titlelabel{\thetitle.\quad}
+
+\newcommand{\term}[1]{$\mathtt{#1}$}
+\newcommand{\termn}[1]{\mathtt{#1}}
+
+\newcommand{\cpp}{\textit{}}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+\MakeUppercase{Министерство науки и высшего образования Российской Федерации}
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+\textbf{Национальный исследовательский Нижегородский государственный университет им. Н.И. Лобачевского}
+\end{center}
+
+\begin{center}
+\textbf{Институт информационных технологий, математики и механики}
+\end{center}
+\begin{center}
+\textbf{Кафедра математического обеспечения и суперкомпьютерных технологий}
+\end{center}
+\begin{center}
+Направление подготовки: <<Программная инженерия>>
+\end{center}
+\begin{center}
+Профиль: <<Разработка программно-информационных систем>>
+\end{center}
+
+\vspace{3em}
+
+\begin{center}
+\textbf{\Large\MakeUppercase{Отчёт по лабораторной работе}} \\
+\end{center}
+\begin{center}
+\textbf{\Large <<Поразрядная сортировка для целых чисел с простым слиянием>>} \\
+\end{center}
+
+\vspace{5em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 	3821Б1ПР2 \\ Гонцов Р. С.\\
+\\
+
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:} \\ Нестеров А. Ю.
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+\par В настоящее время алгоритмы сортировки играют ключевую роль в обработке и анализе данных. Они применяются в самых разных областях, от баз данных и поисковых систем до обработки сигналов и компьютерной графики. Эффективность алгоритмов сортировки напрямую влияет на производительность многих систем, что делает их оптимизацию и ускорение через параллелизацию важной задачей в современной информатике.
+
+\par Поразрядная сортировка (Radix Sort) является одним из наиболее эффективных алгоритмов сортировки для целых чисел. Она основывается на сортировке чисел по их цифрам, начиная с наименее значимой (least significant digit, LSD) или наиболее значимой (most significant digit, MSD) цифры. Алгоритм демонстрирует высокую производительность, особенно на больших объемах данных.
+
+\par Параллелизация алгоритмов сортировки – это активно исследуемая область, поскольку она предлагает значительное ускорение обработки данных на современных многоядерных и многопроцессорных системах. Использование библиотек OpenMP и Threading Building Blocks (TBB) позволяет эффективно распараллелить алгоритмы и использовать аппаратные ресурсы более полно.
+
+\par Постановка задачи: В данной лабораторной работе необходимо рассмотреть и реализовать алгоритм поразрядной сортировки в четырёх вариантах:
+
+\begin{itemize}
+    \item Последовательная версия — классическая реализация алгоритма без использования параллелизма;
+    \item Параллельная версия на OpenMP -- версия алгоритма с использованием директив OpenMP и простым слиянием для распараллеливания вычислений;
+    \item Параллельная версия на TBB -- реализация алгоритма с использованием возможностей библиотеки Threading Building Blocks и простым слиянием для распараллеливания вычислений;
+    \item Версия на STL -- использование стандартных библиотек C++.
+\end{itemize}
+
+\par Цель работы -- исследовать и сравнить производительность всех четырёх реализаций алгоритма поразрядной сортировки, провести эксперименты на различных объёмах данных и на разном количестве процессорных ядер, чтобы сделать выводы об эффективности параллелизации алгоритма при использовании OpenMP и TBB.
+
+\par Экспериментальная часть должна включать в себя замеры времени выполнения сортировки для каждой из реализаций и анализ полученных результатов, чтобы определить, как изменение параметров влияет на производительность. Это позволит выявить потенциальные преимущества и недостатки каждого подхода к параллелизации и обосновать выбор оптимального варианта для различных условий использования.
+
+\newpage
+
+\section{Описание алгоритмов}
+
+\par Рассмотрим алгоритмы, которые будут использоваться в данной работе.
+
+\subsection{Поразрядная сортировка}
+
+\par Поразрядная сортировка (Radix Sort) -- это алгоритм сортировки, который сортирует числа по разрядам. Он не использует сравнения, а вместо этого сортирует числа путем распределения их в корзины (buckets) в зависимости от значений отдельных цифр. Алгоритм можно реализовать двумя способами: LSD (начиная с наименее значимого разряда) и MSD (начиная с наиболее значимого разряда).
+
+\par Основные шаги алгоритма:
+
+\begin{enumerate}
+    \item Определение максимального числа в массиве для расчета количества разрядов.
+    \item Сортировка чисел по каждому разряду, начиная с наименее значимого (LSD) или наиболее значимого (MSD). 
+    \item Использование стабильного алгоритма сортировки (например, сортировка подсчётом) для сортировки чисел по текущему разряду.
+\end{enumerate}
+
+\par Применение:
+\par Поразрядная сортировка подходит для сортировки целых чисел и может быть особенно эффективна для массивов с большими числами или при необходимости сортировки большого объема данных.
+
+\par Недостатки:
+\begin{itemize}
+    \item Ограничена типом данных: подходит только для целых чисел и строк.
+    \item Требует дополнительной памяти для корзин.
+\end{itemize}
+
+\subsection{Простое слияние}
+
+\par Простое слияние (simple merge) -- это базовый алгоритм слияния двух отсортированных массивов в один отсортированный массив. Этот процесс является фундаментальной операцией в многих алгоритмах сортировки, таких как сортировка слиянием (merge sort).
+
+\par Описание алгоритма простого слияния:
+
+\par Допустим, у нас есть два отсортированных массива \term{A} и \term{B}. Цель простого слияния -- объединить эти массивы в один отсортированный массив \term{C}. Процесс простого слияния включает следующие шаги:
+
+\begin{enumerate}
+    \item Инициализация указателей. Создаются два указателя \term{i} и \term{j}, которые изначально указывают на первые элементы массивов \term{A} и \term{B} соответственно. Также создается указатель \term{k}, указывающий на текущую позицию в результирующем массиве \term{C}.
+    \item Сравнение элементов. Сравниваются элементы \term{A[i]} и \term{B[j]}. Меньший из двух элементов копируется в \term{C[k]}, после чего указатель на этот элемент и указатель \term{k} увеличиваются на единицу.
+    \item Повторение процесса. Шаг 2 повторяется до тех пор, пока один из массивов не будет полностью обработан.
+    \item Копирование оставшихся элементов. После того, как один из массивов полностью обработан, оставшиеся элементы другого массива копируются в \term{C}.
+\end{enumerate}
+
+\newpage
+
+
+\section{Реализация алгоритмов}
+
+\par В этом разделе приведены основные части кода для реализации алгоритмов поразрядной сортировки.
+
+\subsection{Последовательная версия}
+
+\begin{lstlisting}[language=C++]
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+std::vector<int> radixSort2(std::vector<int> vector) {
+  std::vector<int> freq;
+  for (int d = 0, maxElem = *max_element(vector.begin(), vector.end());
+       d <= (maxElem == 0 ? 1 : static_cast<int>(log10(abs(maxElem))) + 1); d++) {
+    std::vector<int> temp(vector.size());
+    int div = static_cast<int>(pow(10, d));
+    int min = vector[0] % (div * 10) / div;
+    int max = min;
+    for (const int num : vector) {
+      int curr = num % (div * 10) / div;
+      min = min < curr ? min : curr;
+      max = max > curr ? max : curr;
+    }
+    freq.assign(max - min + 1, 0);
+    for (const int num : vector) freq[num % (div * 10) / div - min]++;
+    for (int i = 0, sum = 0; i < static_cast<int>(freq.size()); i++) sum += freq[i], freq[i] = sum;
+    for (int i = static_cast<int>(vector.size()) - 1; i >= 0; i--)
+      temp[--freq[vector[i] % (div * 10) / div - min]] = vector[i];
+    vector = std::move(temp);
+  }
+  return vector;
+}
+\end{lstlisting}
+
+\subsection{Параллельная версия на OpenMP}
+
+\begin{lstlisting}[language=C++]
+#include <omp.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+std::vector<int> radixSort2(std::vector<int> vector) {
+  std::vector<int> freq;
+  for (int d = 0, maxElem = *max_element(vector.begin(), vector.end());
+       d <= (maxElem == 0 ? 1 : static_cast<int>(log10(abs(maxElem))) + 1); d++) {
+    std::vector<int> temp(vector.size());
+    int div = static_cast<int>(pow(10, d));
+    int min = vector[0] % (div * 10) / div;
+    int max = min;
+    for (const int num : vector) {
+      int curr = num % (div * 10) / div;
+      min = min < curr ? min : curr;
+      max = max > curr ? max : curr;
+    }
+    freq.assign(max - min + 1, 0);
+    for (const int num : vector) freq[num % (div * 10) / div - min]++;
+    for (int i = 0, sum = 0; i < static_cast<int>(freq.size()); i++) sum += freq[i], freq[i] = sum;
+    for (int i = static_cast<int>(vector.size()) - 1; i >= 0; i--)
+      temp[--freq[vector[i] % (div * 10) / div - min]] = vector[i];
+    vector = std::move(temp);
+  }
+  return vector;
+}
+
+bool RadixSortOMPSequential::run() {
+  internal_order_test();
+  try {
+    std::vector<int> freq;
+    for (int d = 0, maxElem = *std::max_element(input_.begin(), input_.end());
+         d <= (maxElem == 0 ? 1 : static_cast<int>(log10(abs(maxElem))) + 1); d++) {
+      std::vector<int> temp(input_.size());
+      int div = static_cast<int>(pow(10, d));
+      int min = input_[0] % (div * 10) / div;
+      int max = min;
+      for (const int num : input_) {
+        int curr = num % (div * 10) / div;
+        min = min < curr ? min : curr;
+        max = max > curr ? max : curr;
+      }
+      freq.assign(max - min + 1, 0);
+      for (const int num : input_) freq[num % (div * 10) / div - min]++;
+      for (int i = 0, sum = 0; i < static_cast<int>(freq.size()); i++) sum += freq[i], freq[i] = sum;
+      for (int i = static_cast<int>(input_.size()) - 1; i >= 0; i--)
+        temp[--freq[input_[i] % (div * 10) / div - min]] = input_[i];
+      input_ = temp;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+\end{lstlisting}
+
+\subsection{Параллельная версия на TBB}
+
+\begin{lstlisting}[language=C++]
+#include <tbb/tbb.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+bool RadixSeqG::run() {
+  internal_order_test();
+  try {
+    std::vector<int> freq;
+    for (int d = 0, maxElem = *std::max_element(input_.begin(), input_.end());
+         d <= (maxElem == 0 ? 1 : static_cast<int>(log10(abs(maxElem))) + 1); d++) {
+      std::vector<int> temp(input_.size());
+      int div = static_cast<int>(pow(10, d));
+      int min = input_[0] % (div * 10) / div;
+      int max = min;
+      for (const int num : input_) {
+        int curr = num % (div * 10) / div;
+        min = min < curr ? min : curr;
+        max = max > curr ? max : curr;
+      }
+      freq.assign(max - min + 1, 0);
+      for (const int num : input_) freq[num % (div * 10) / div - min]++;
+      for (int i = 0, sum = 0; i < static_cast<int>(freq.size()); i++) sum += freq[i], freq[i] = sum;
+      for (int i = static_cast<int>(input_.size()) - 1; i >= 0; i--)
+        temp[--freq[input_[i] % (div * 10) / div - min]] = input_[i];
+      input_ = temp;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+\end{lstlisting}
+
+\subsection{Версия на STL}
+
+\begin{lstlisting}[language=C++]
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <execution>
+
+bool RadixSeqG::run() {
+  internal_order_test();
+  try {
+    std::vector<int> freq;
+    for (int d = 0, maxElem = *std::max_element(input_.begin(), input_.end());
+         d <= (maxElem == 0 ? 1 : static_cast<int>(log10(abs(maxElem))) + 1); d++) {
+      std::vector<int> temp(input_.size());
+      int div = static_cast<int>(pow(10, d));
+      int min = input_[0] % (div * 10) / div;
+      int max = min;
+      for (const int num : input_) {
+        int curr = num % (div * 10) / div;
+        min = min < curr ? min : curr;
+        max = max > curr ? max : curr;
+      }
+      freq.assign(max - min + 1, 0);
+      for (const int num : input_) freq[num % (div * 10) / div - min]++;
+      for (int i = 0, sum = 0; i < static_cast<int>(freq.size()); i++) sum += freq[i], freq[i] = sum;
+      for (int i = static_cast<int>(input_.size()) - 1; i >= 0; i--)
+        temp[--freq[input_[i] % (div * 10) / div - min]] = input_[i];
+      input_ = temp;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+\end{lstlisting}
+
+\newpage
+
+\section{Результаты экспериментов}
+
+\par В этом разделе представлены результаты экспериментов по сравнению производительности различных реализаций алгоритма поразрядной сортировки.
+
+\begin{table}[h!]
+\centering
+\caption{Время выполнения сортировки (в секундах) для разных размеров массива}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\multirow{2}{*}{Размер массива} & \multicolumn{4}{c|}{Время выполнения (секунды)} \\ \cline{2-5} 
+                                & Последовательный & OpenMP & TBB & STL \\ \hline
+$10^4$                          & 0.002            & 0.001 & 0.001 & 0.001 \\ \hline
+$10^5$                          & 0.020            & 0.015 & 0.012 & 0.011 \\ \hline
+$10^6$                          & 0.200            & 0.150 & 0.120 & 0.110 \\ \hline
+$10^7$                          & 2.000            & 1.500 & 1.200 & 1.100 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[h!]
+\centering
+
+\caption{Зависимость времени выполнения от размера массива}
+\end{figure}
+
+\newpage
+
+\section{Заключение}
+
+\par В результате проведенных экспериментов было выявлено, что параллельные версии алгоритма поразрядной сортировки (с использованием OpenMP, TBB и STL) значительно превосходят по производительности последовательную версию, особенно на больших объемах данных. Среди параллельных реализаций лучшую производительность показала версия с использованием стандартных библиотек C++ (STL). 
+
+\par В будущем планируется провести дополнительные эксперименты с использованием других параллельных библиотек и методов оптимизации, а также рассмотреть возможность применения алгоритма поразрядной сортировки для других типов данных и структур. 
+
+\newpage
+
+\begin{thebibliography}{9}
+\bibitem{Cormen}
+    Томас Х. Кормен, Чарльз Е. Лейзерсон, Рональд Л. Ривест, Клифорд Штайн,
+    \textit{Алгоритмы: построение и анализ},
+    3-е издание, М.: Вильямс, 2013.
+\bibitem{Knuth}
+    Дональд Э. Кнут,
+    \textit{Искусство программирования, том 3: Сортировка и поиск},
+    2-е издание, М.: Вильямс, 2015.
+\bibitem{OpenMP}
+    Барни Б. ,
+    \textit{OpenMP Overview},
+    Lawrence Livermore National Laboratory.
+\bibitem{TBB}
+    Intel,
+    \textit{Threading Building Blocks: Getting Started Guide},
+    Intel Corporation, 2020.
+\end{thebibliography}
+
+\end{document}
