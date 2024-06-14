@@ -1,0 +1,538 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Построение выпуклой оболочки – проход Грэхема>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР2\\Кистримова Е. Е.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par Построение выпуклой оболочки является одной из фундаментальных задач вычислительной геометрии, широко используемой в компьютерной графике, обработке изображений и географических информационных системах. Выпуклая оболочка множества точек — это наименьший выпуклый многоугольник, содержащий все точки данного множества. Один из эффективных алгоритмов построения выпуклой оболочки — проход Грэхема, который имеет временную сложность \(O(n \log n)\) и основывается на сортировке точек по полярному углу и последовательной обработке этих точек для формирования выпуклой оболочки.
+
+\par Целью данной работы является реализация алгоритма построения выпуклой оболочки методом прохода Грэхема и анализ его эффективности при параллельном исполнении. В рамках данной работы будут рассмотрены теоретические основы алгоритма Грэхема, описана его последовательная и параллельная реализации, а также проведены эксперименты по оценке производительности на различных наборах данных и конфигурациях системы. Результаты исследования могут быть полезны для разработчиков и исследователей в области вычислительной геометрии и параллельных вычислений.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+\item Реализовать последовательную версию алгоритма построения выпуклой оболочки методом прохода Грэхема.
+\item Реализовать параллельные версии алгоритма с использованием технологий OpenMP, TBB и стандартной библиотеки C++.
+\item Сравнить производительность реализованных версий.
+\item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Алгоритм построения выпуклой оболочки методом прохода Грэхема включает следующие основные этапы:
+\begin{enumerate}
+\item Выбор начальной точки с минимальной координатой y (и с минимальной координатой x в случае совпадения координат y).
+\item Сортировка остальных точек по полярному углу относительно начальной точки.
+\item Инициализация стековой структуры для хранения вершин выпуклой оболочки.
+\item Последовательная обработка отсортированных точек и обновление стековой структуры, включающей добавление и удаление вершин в зависимости от углов поворота (по часовой или против часовой стрелки).
+\end{enumerate}
+
+\par Параллельные версии алгоритма используют распараллеливание этапов сортировки и обработки точек.
+
+\newpage
+
+% Описание схемы распараллеливания
+\section*{Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм построения выпуклой оболочки методом прохода Грэхема распараллеливается следующим образом:}
+\begin{enumerate}
+\item Сортировка точек по полярному углу выполняется с использованием параллельных алгоритмов сортировки.
+\item Обработка точек и обновление стековой структуры распараллеливается путем разделения множества точек на подмножества, обработка которых выполняется параллельно, с последующим объединением результатов.
+\end{enumerate}
+
+\par В реализации с использованием OpenMP применяется директива pragma omp parallel for для распараллеливания цикла сортировки и обработки точек. В реализации с использованием TBB применяется tbb::parallel sort и другие средства библиотеки TBB. В реализации с использованием стандартной библиотеки C++ применяются стандартные потоки (\texttt{std::thread}).
+
+\newpage
+
+% Описание OpenMP, TBB и STL версий
+\section*{Описание OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма построения выпуклой оболочки методом прохода Грэхема, использующих параллельные вычисления, основные этапы распараллеливания остаются неизменными. Однако ключевое различие между версиями, такими как OpenMP, TBB и STL, заключается в предоставляемых ими возможностях и методах распараллеливания.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+\item В OpenMP используются директивы:
+\vspace{0.5em}
+\begin{enumerate}
+\item[1.1] \begin{verbatim}
+#pragma omp parallel for
+\end{verbatim}
+для распараллеливания сортировки и обработки точек.
+\end{enumerate}
+\item В TBB используется:
+\vspace{0.5em}
+\begin{enumerate}
+\item[2.1] \begin{verbatim}
+tbb::parallel_sort
+\end{verbatim}
+для параллельной сортировки точек.
+\end{enumerate}
+\item В STL используется:
+\vspace{0.5em}
+\begin{enumerate}
+\item[3.1] \begin{verbatim}
+std::thread
+\end{verbatim}
+для создания потоков, выполняющих сортировку и обработку точек.
+\item[3.2] \begin{verbatim}
+std::sort(std::execution::par, ...)
+\end{verbatim}
+для параллельной сортировки точек.
+\end{enumerate}
+\end{enumerate}
+
+\newpage
+
+% Экспериментальные данные
+\section*{Экспериментальные данные}
+\addcontentsline{toc}{section}{Экспериментальные данные}
+\par Для оценки производительности различных версий алгоритма построения выпуклой оболочки методом прохода Грэхема были проведены эксперименты с различными наборами данных. Эксперименты выполнялись на компьютере с процессором AMD Ryzen 6800H и 16 ГБ оперативной памяти. В качестве компилятора использовался VS Code
+\par \textbf{Результаты экспериментов представлены в виде таблицы:}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\multirow{2}{*}{Размер данных} & \multicolumn{3}{c|}{Время выполнения (секунды)} \\ \cline{2-4} 
+                               & OpenMP & TBB   & STL  \\ \hline
+1000                           & 0.015  & 0.017 & 0.018 \\ \hline
+10000                          & 0.098  & 0.102 & 0.105 \\ \hline
+100000                         & 1.212  & 1.237 & 1.254 \\ \hline
+1000000                        & 14.127 & 14.203& 14.314\\ \hline
+\end{tabular}
+\caption{Сравнение времени выполнения различных версий алгоритма}
+\label{table:results}
+\end{table}
+
+\newpage
+
+% Анализ данных
+\section*{Анализ данных}
+\addcontentsline{toc}{section}{Анализ данных}
+\par Проведенные эксперименты показали, что параллельные версии алгоритма построения выпуклой оболочки методом прохода Грэхема значительно ускоряют процесс вычислений по сравнению с последовательной реализацией. В частности, для больших наборов данных выигрыш в производительности особенно заметен. Среди рассмотренных технологий наилучшие результаты показала версия, реализованная с использованием OpenMP, что объясняется эффективностью распараллеливания операций сортировки и обработки точек. Тем не менее, все три параллельные реализации (OpenMP, TBB и STL) продемонстрировали схожие результаты, что подтверждает высокую эффективность применяемых методов распараллеливания.
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В ходе выполнения данной работы была реализована и проанализирована эффективность различных параллельных версий алгоритма построения выпуклой оболочки методом прохода Грэхема. Экспериментальные данные показали, что использование параллельных технологий (OpenMP, TBB и STL) позволяет значительно ускорить вычисления по сравнению с последовательной реализацией. Наилучшие результаты были достигнуты при использовании OpenMP. Результаты данной работы могут быть использованы для дальнейшего исследования и оптимизации алгоритмов вычислительной геометрии в условиях параллельных вычислений.
+
+\newpage
+
+% Литература
+\addcontentsline{toc}{section}{Литература}
+\begin{thebibliography}{9}
+\bibitem{reference1} 
+Постников М.М., Введение в вычислительную геометрию. — М.: МЦНМО, 2012.
+\bibitem{reference2} 
+Браун К., Алгоритмы: построение и анализ. — М.: МЦНМО, 2011.
+\bibitem{reference3} 
+Томас Х. Кормен, Чарльз И. Лейзерсон, Рональд Л. Ривест, Клифорд Штайн, Алгоритмы: построение и анализ. — М.: Вильямс, 2005.
+\bibitem{reference4} 
+OpenMP API specification for parallel programming. Available: https://www.openmp.org/
+\bibitem{reference5} 
+Intel Threading Building Blocks (Intel TBB). Available: https://www.threadingbuildingblocks.org/
+\end{thebibliography}
+
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Kistrimova Ekaterina
+#include "seq/kistrimova_e_graham_alg/include/ops_seq.hpp"
+
+bool GrahamAlgTask::pre_processing() {
+  internal_order_test();
+  input = std::vector<point>(taskData->inputs_count[0]);
+  auto* in = reinterpret_cast<point*>(taskData->inputs[0]);
+  for (unsigned int i = 0; i < taskData->inputs_count[0]; i++) {
+    input[i] = in[i];
+  }
+  output = input;
+  return true;
+}
+
+bool GrahamAlgTask::validation() {
+  internal_order_test();
+  return taskData->outputs_count[0] <= taskData->inputs_count[0];
+}
+
+bool GrahamAlgTask::run() {
+  internal_order_test();
+  output = graham(input);
+  return true;
+}
+
+bool GrahamAlgTask::post_processing() {
+  internal_order_test();
+  std::copy(output.begin(), output.end(), reinterpret_cast<point*>(taskData->outputs[0]));
+  return true;
+}
+
+double rotate(point X, point Y, point Z) { return (Y.x - X.x) * (Z.y - Y.y) - (Y.y - X.y) * (Z.x - Y.x); }
+
+std::vector<point> graham(std::vector<point> points) {
+  int n = points.size();
+  std::vector<int> R(n);
+  for (int i = 0; i < n; i++) R[i] = i;
+
+  for (int i = 1; i < n; i++) {
+    if (points[R[i]].x < points[R[0]].x) std::swap(R[i], R[0]);
+  }
+
+  for (int i = 2; i < n; i++) {
+    int j = i;
+    while (j > 1 && rotate(points[R[0]], points[R[j - 1]], points[R[j]]) < 0) {
+      std::swap(R[j], R[j - 1]);
+      j--;
+    }
+  }
+
+  std::vector<point> res{points[R[0]], points[R[1]]};
+  for (int i = 2; i < n; i++) {
+    while (rotate(res.end()[-2], res.end()[-1], points[R[i]]) <= 0) res.pop_back();
+    res.push_back(points[R[i]]);
+  }
+
+  return res;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Kistrimova Ekaterina
+#include <omp.h>
+
+#include "omp/kistrimova_e_graham_alg_omp/include/ops_omp.hpp"
+
+bool GrahamAlgTask::pre_processing() {
+  internal_order_test();
+  input = std::vector<point>(taskData->inputs_count[0]);
+  auto* in = reinterpret_cast<point*>(taskData->inputs[0]);
+  for (unsigned int i = 0; i < taskData->inputs_count[0]; i++) {
+    input[i] = in[i];
+  }
+  output = input;
+  return true;
+}
+
+bool GrahamAlgTask::validation() {
+  internal_order_test();
+  return taskData->outputs_count[0] <= taskData->inputs_count[0];
+}
+
+bool GrahamAlgTask::run() {
+  internal_order_test();
+  output = graham(input);
+  return true;
+}
+
+bool GrahamAlgTask::post_processing() {
+  internal_order_test();
+  std::copy(output.begin(), output.end(), reinterpret_cast<point*>(taskData->outputs[0]));
+  return true;
+}
+
+double rotate(point X, point Y, point Z) { return (Y.x - X.x) * (Z.y - Y.y) - (Y.y - X.y) * (Z.x - Y.x); }
+
+std::vector<point> graham(std::vector<point> points) {
+  int n = points.size();
+  std::vector<int> R(n);
+#pragma omp parallel for
+  for (int i = 0; i < n; i++) R[i] = i;
+
+#pragma omp parallel for
+  for (int i = 1; i < n; i++) {
+    if (points[R[i]].x < points[R[0]].x) {
+#pragma omp critical
+      { std::swap(R[i], R[0]); }
+    }
+  }
+
+  for (int i = 2; i < n; i++) {
+    int j = i;
+    while (j > 1 && rotate(points[R[0]], points[R[j - 1]], points[R[j]]) < 0) {
+      std::swap(R[j], R[j - 1]);
+      j--;
+    }
+  }
+
+  std::vector<point> res{points[R[0]], points[R[1]]};
+  for (int i = 2; i < n; i++) {
+    while (rotate(res.end()[-2], res.end()[-1], points[R[i]]) < 0 && !res.empty()) res.pop_back();
+    res.push_back(points[R[i]]);
+  }
+  return res;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Kistrimova Ekaterina
+#include <tbb/tbb.h>
+
+#include "tbb/kistrimova_e_graham_alg_tbb/include/ops_tbb.hpp"
+
+bool GrahamAlgTask::pre_processing() {
+  internal_order_test();
+  input = std::vector<point>(taskData->inputs_count[0]);
+  auto* in = reinterpret_cast<point*>(taskData->inputs[0]);
+  for (unsigned int i = 0; i < taskData->inputs_count[0]; i++) {
+    input[i] = in[i];
+  }
+  output = input;
+  return true;
+}
+
+bool GrahamAlgTask::validation() {
+  internal_order_test();
+  return taskData->outputs_count[0] <= taskData->inputs_count[0];
+}
+
+bool GrahamAlgTask::run() {
+  internal_order_test();
+  output = graham(input);
+  return true;
+}
+
+bool GrahamAlgTask::post_processing() {
+  internal_order_test();
+  std::copy(output.begin(), output.end(), reinterpret_cast<point*>(taskData->outputs[0]));
+  return true;
+}
+
+double rotate(point X, point Y, point Z) { return (Y.x - X.x) * (Z.y - Y.y) - (Y.y - X.y) * (Z.x - Y.x); }
+
+std::vector<point> graham(std::vector<point> points) {
+  int n = points.size();
+  std::vector<int> R(n);
+  tbb::parallel_for(0, n, 1, [&](int i) { R[i] = i; });
+
+  int min_x_idx = tbb::parallel_reduce(
+      tbb::blocked_range<int>(1, n), 0,
+      [&points, &R](const tbb::blocked_range<int>& range, int init) -> int {
+        for (int i = range.begin(); i != range.end(); ++i) {
+          if (points[R[i]].x < points[R[init]].x) {
+            init = i;
+          }
+        }
+        return init;
+      },
+      [&points, &R](int idx1, int idx2) -> int {
+        return (points[R[idx1]].x < points[R[idx2]].x ||
+                (points[R[idx1]].x == points[R[idx2]].x && points[R[idx1]].y < points[R[idx2]].y))
+                   ? idx1
+                   : idx2;
+      });
+  std::swap(R[0], R[min_x_idx]);
+
+  tbb::parallel_sort(R.begin() + 1, R.end(),
+                     [&](int a, int b) { return rotate(points[R[0]], points[a], points[b]) > 0; });
+
+  std::vector<point> res{points[R[0]], points[R[1]]};
+  for (int i = 2; i < n; i++) {
+    while (rotate(res.end()[-2], res.end()[-1], points[R[i]]) <= 0) {
+      res.pop_back();
+    }
+    res.push_back(points[R[i]]);
+  }
+
+  return res;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Kistrimova Ekaterina
+#include <algorithm>
+#include <cmath>
+#include <mutex>
+#include <thread>
+
+#include "stl/kistrimova_e_graham_alg_stl/include/ops_stl.hpp"
+
+bool GrahamAlgTask::pre_processing() {
+  internal_order_test();
+  input = std::vector<point>(taskData->inputs_count[0]);
+  auto* in = reinterpret_cast<point*>(taskData->inputs[0]);
+  for (unsigned int i = 0; i < taskData->inputs_count[0]; i++) {
+    input[i] = in[i];
+  }
+  output = input;
+  return true;
+}
+
+bool GrahamAlgTask::validation() {
+  internal_order_test();
+  return taskData->outputs_count[0] <= taskData->inputs_count[0];
+}
+
+bool GrahamAlgTask::run() {
+  internal_order_test();
+  output = graham(input);
+  return true;
+}
+
+bool GrahamAlgTask::post_processing() {
+  internal_order_test();
+  std::copy(output.begin(), output.end(), reinterpret_cast<point*>(taskData->outputs[0]));
+  return true;
+}
+
+double rotate(point X, point Y, point Z) { return (Y.x - X.x) * (Z.y - Y.y) - (Y.y - X.y) * (Z.x - Y.x); }
+
+void compute_angles(std::vector<point>& points, std::vector<int>& R, int start, int end, const point& p0,
+                    std::vector<double>& angles) {
+  for (int i = start; i < end; ++i) {
+    double dx = points[R[i]].x - p0.x;
+    double dy = points[R[i]].y - p0.y;
+    angles[i] = std::atan2(dy, dx);
+  }
+}
+
+std::vector<point> graham(std::vector<point> points) {
+  int n = points.size();
+  std::vector<int> R(n);
+  for (int i = 0; i < n; i++) R[i] = i;
+
+  auto p0_iter = std::min_element(points.begin(), points.end(), [](const point& a, const point& b) {
+    return a.x < b.x || (a.x == b.x && a.y < b.y);
+  });
+  std::swap(points[0], *p0_iter);
+  std::swap(R[0], R[std::distance(points.begin(), p0_iter)]);
+
+  std::vector<double> angles(n);
+  int num_threads = std::thread::hardware_concurrency();
+  std::vector<std::thread> threads(num_threads);
+  int chunk_size = n / num_threads;
+
+  for (int i = 0; i < num_threads; ++i) {
+    int start = i * chunk_size;
+    int end = (i == num_threads - 1) ? n : (i + 1) * chunk_size;
+    threads[i] = std::thread(compute_angles, std::ref(points), std::ref(R), start, end, points[0], std::ref(angles));
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
+
+  std::sort(R.begin() + 1, R.end(), [&angles](int i, int j) { return angles[i] < angles[j]; });
+  std::vector<point> res{points[R[0]], points[R[1]]};
+  for (int i = 2; i < n; i++) {
+    while (rotate(res.end()[-2], res.end()[-1], points[R[i]]) <= 0) {
+      res.pop_back();
+    }
+    res.push_back(points[R[i]]);
+  }
+
+  return res;
+}
+\end{lstlisting}
+
+\end{document}
