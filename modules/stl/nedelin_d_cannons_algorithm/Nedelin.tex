@@ -1,0 +1,1050 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Умножение плотных матриц. Элементы типа double. Блочная схема, алгоритм Кэннона.>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР3\\Неделин Д.И.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В эпоху стремительного развития технологий обработки математических вычислений одной из ключевых задач является эффективное применение параллельных вычислений для повышения производительности алгоритмов. Умножение плотных матриц, в частности с использованием блочного умножения и алгоритма Кэннона. Алгоритм Кэннона является эффективным методом для параллельного умножения плотных матриц. Этот алгоритм был разработан для работы на системах с распределенной памятью и предназначен для улучшения производительности за счёт параллельного выполнения операций. Он особенно полезен для вычислений на суперкомпьютерах и в кластерах, где существует множество процессоров, способных выполнять операции одновременно
+
+\par Целью настоящей работы является разработка и анализ эффективности параллельного алгоритма Кэннона на системах с общей памятью. Параллельный алгоритм Кэннона позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может существенно ускорить процесс расчётов умножения матриц и повысить производительность.
+
+\par В рамках данной работы будут рассмотрены теоретические основы алгоритмов умножения матриц , описан параллельный алгоритм Кэннона, а также проведены эксперименты по оценке эффективности и ускорения предложенного алгоритма на различных наборах данных и конфигурациях системы. Результаты исследования могут быть полезны для разработчиков программного обеспечения в области обработки расчётов связанных с умножением матриц, а также для исследователей, занимающихся параллельными вычислениями и оптимизацией алгоритмов.
+
+\par В рамках задачи реализован алгоритм с использованием технологий: SEQ, OMP, TBB, STD.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+\item Реализовать четыре версии умножения плотных матриц при помощи алгоритма Кэннона:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии OMP (OpenMP)
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+\item Сравнить реализации и производительность версий.
+\item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Алгоритм Кэннона предназначен для умножения двух $n$ x $n$ матриц $A$ и $B$ и результирующей матрицей $C$.
+Основные шаги алгоритма включают инициализацию, циклический сдвиг блоков данных и параллельное выполнение операций умножения и сложения.
+
+\par \textbf{Алгоритм умножения плотных матриц при помощи алгоритма Кэннона:}
+
+\begin{enumerate}
+\item Матрицы $A$ и $B$ делятся на подматрицы размером $\frac{n}{\sqrt{p}}$ x $\frac{n}{\sqrt{p}}$, где $p$ - число процессов;
+Эти подматрицы распределяются между процессорами в сетке $\sqrt{p}$ x $\sqrt{p}$
+\item 
+\begin{enumerate}
+\item Матрица $A$ циклически сдвигается влево на $i$ позиций в $i$-той строке
+\item Матрица $B$ циклически сдвигается влево на $j$ позиций в $j$-той строке
+\end{enumerate}
+\item Параллельные вычисления:
+\begin{enumerate}
+\item Каждый процессор выполняет локальное умножение своих блоков матриц $A$ и $B$ и добавляет результат к своему блоку матриц $C$.
+\item Все процессоры выполняют циклический сдвиг блоков матриц $A$  влево и блоков матриц $B$ вверх.
+\item Эти операции повторяются $\sqrt{p}$ раз.
+\end{enumerate}
+\end{enumerate}
+
+\par Алгоритм Кэннона позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс обработки больших объемов данных и повысить производительность.
+
+\par В рамках данной работы будут реализованы четыре версии алгоритма Кэннона:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии (OMP) OpenMP
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+Будет проведено сравнение реализаций и анализ производительности каждой версии.
+
+\newpage
+
+% Описание схемы распараллеливания
+\section* {Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм Кэннона состоит из следующих основных этапов, которые были распараллелены:}
+\begin{enumerate}
+\item Распределяем матрицы $A$ и $B$ на блоки и после на процессы. 
+\item Реализуем циклический сдвиг строк и столбцов с использованием параллельных циклов и соответствующих директив
+\item Параллельно умножаем блоки и суммируем результаты
+\end{enumerate}
+
+\par Параллельное разбиение матриц позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс вычислений и повысить производительность. В реализации OMP использовалась директива \texttt pragma omp parallel for для распараллеливания цикла, выполняющего циклический сдвиг для блока. В других реализациях с использованием других технолигий распараллеливалась та же секция.
+
+\newpage
+
+% Описание OpenMP, TBB и STL версий
+\section* {Описание OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма Кэннона, использующих параллельные вычисления, основные участки кода, подлежащие распараллеливанию, остаются неизменными. Однако ключевое различие между версиями, такими как OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), заключается в предоставляемых ими возможностях и методах распараллеливания.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+\item В OpenMP были использованы директивы:
+\vspace{0.5em}
+\begin{enumerate}
+\item[1.1] \begin{verbatim}
+#pragma omp parallel for
+\end{verbatim}
+
+для распараллеливания циклического сдвига строк и умножения блоков матриц.
+\end{enumerate}
+\item В TBB было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[2.1] \begin{verbatim}
+tbb::parallel_for() { ... })
+\end{verbatim}
+для распараллеливания циклического сдвига и умножения блоков матриц
+\end{enumerate}
+\item В STL было использовано:
+\vspace{0.5em}
+\begin{enumerate}
+\item[3.1] \begin{verbatim}
+std::thread
+\end{verbatim}
+для создания потоков, выполняющих циклический сдвиг и умножение блока матриц, накопления результатов вычислений
+\item[3.2] \begin{verbatim}
+std::thread::join
+\end{verbatim}
+для ожидания завершения выполнения всех потоков
+\end{enumerate}
+\end{enumerate}
+
+Во всех трех версиях основными распараллеливаемыми участками кода являются:
+\begin{enumerate}
+\item Распараллеливания циклического сдвига элементов, строк и столбцов
+\item Распараллеливания процесса умножений блоков и сохранения результатов
+\end{enumerate}
+
+Различия между версиями заключаются в используемых средствах параллельного программирования и способах распределения вычислительной нагрузки между потоками.
+
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма Кэннона была проверена путем сравнения результатов вычислений с эталонными.
+\par Тестирование производительности проводилось на матрицах различных размеров, начиная от 500x500 элементов и до 1000x1000 элементов.
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: 11th Gen Intel(R) Core(TM) i5-11600KF , 6 ядер / 12 потоков
+\item Оперативная память: 32 ГБ
+\item Операционная система: Windows 10
+\end{itemize}
+\par Количество потоков для параллельных версий алгоритма было ограничено до 4.
+\par В таблице приведены средние значения времени обработки изображения размером 1000x1000 элементов за 10 запусков.
+\par \textbf{Результаты экспериментов:}
+\begin{center}
+\begin{tabular}{ ||c | c | c ||  }
+    \hline Версия алгоритма & pipeline (сек) & task (сек)\\ 
+    \hline Последовательная & 12.2181211100 & 12.0925412400 \\
+    \hline OMP & 3.1183385117 & 3.0889123424 \\
+    \hline TBB & 5.092467124 & 5.0517826455 \\ 
+    \hline STL & 3.5167598110 & 3.4957898520 \\ 
+    \hline
+\end{tabular}\\[5mm]
+\end{center}
+
+\newpage
+
+% Анализ результатов
+\section*{Анализ результатов}
+\addcontentsline{toc}{section}{Анализ результатов}
+\par Для оценки эффективности параллельных алгоритмов умножения матриц, были рассчитаны коэффициенты ускорения и эффективности. Расчеты основаны на среднем времени выполнения алгоритмов для изображения размером 1000х1000 элементов.
+
+\par Коэффициент ускорения \( p_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ p_i = \frac{T_{si}}{T_{pi}} $$
+где \( T_{si} \) - время выполнения последовательного алгоритма, а \( T_{pi} \) - время выполнения параллельного алгоритма для \( i \)-й версии.
+
+\par Эффективность \( e_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ e_i = \frac{p_i}{N} $$
+где \( N \) - количество потоков (в данном случае 4).
+
+\par Используя данные из предыдущей таблицы, получаем следующие результаты для двух различных типов задач: pipeline и task.
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{12.2181211100}{3.1183385117} \approx 3.92 \) & \( \frac{3.92}{4} \approx 0.98 \) \\
+ TBB & \( \frac{12.2181211100}{5.092467124} \approx 2.39 \) & \( \frac{2,39}{4} \approx 0.59 \) \\
+ STL & \( \frac{12.2181211100}{3.5167598110} \approx 3.47 \) & \( \frac{3.47}{4} \approx 0.86 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ OpenMP & \( \frac{12.0925412400}{3.0889123424} \approx 3.92 \) & \( \frac{3.92}{4} \approx 0.98 \) \\
+ TBB & \( \frac{12.0925412400}{5.0517826455} \approx 2.39 \) & \( \frac{2.39}{4} \approx 0.5975 \) \\
+ STL & \( \frac{12.0925412400}{3.4957898520} \approx 3.46 \) & \( \frac{3.46}{4} \approx 0.865 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Выводы}:
+\begin{itemize}
+    \item В обоих типах задач (pipeline и task) наилучшее ускорение и эффективность показала версия OMP.
+    \item Наименьшее ускорение и эффективность демонстрирует TBB версия.
+    \item Распараллеливание алгоритма привело к ускорению его выполнения примерно в три раза по сравнению с последовательной версией.
+\end{itemize}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В ходе данной лабораторной работы были успешно реализованы и проанализированы как последовательный, так и параллельные алгоритмы умножения плотных матриц с использованием алгоритма Кэннона. Экспериментальные замеры производительности подтвердили, что распараллеливание алгоритма значительно увеличивает его эффективность, особенно на системах с многопоточной обработкой.
+
+\par Оценка удобства использования различных технологий параллелизма показала, что, несмотря на некоторые накладные расходы, TBB и OpenMP предоставляют мощные инструменты для оптимизации производительности. STL, хотя и оказался менее эффективным в данном контексте, все же предоставляет ценные возможности для упрощения многопоточного программирования.
+
+\par Ранжирование технологий по удобству использования, на основе личного опыта и результатов тестирования, выглядит следующим образом:
+\begin{itemize}
+    \item[1.] TBB — за его высокую производительность и удобство в управлении потоками.
+    \item[2.] OpenMP — за простоту внедрения и хорошую поддержку компиляторами.
+    \item[3.] STL — за его доступность и интеграцию с стандартной библиотекой C++.
+\end{itemize}
+
+\par В заключение, результаты данной работы могут служить отправной точкой для дальнейших исследований в области параллельных вычислений и оптимизации алгоритмов обработки изображений.
+
+\newpage
+
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью".
+    \item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с.
+\end{enumerate}
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Nedelin Dmitry
+#include "seq/nedelin_d_cannons_algorithm/include/ops_seq.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <random>
+#include <vector>
+
+std::vector<double> cannonMatrixMultiplication(const std::vector<double>& A, const std::vector<double>& B, int n,
+                                               int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < n; i += SizeBlock) {
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int kk = k; kk < k_end; ++kk) {
+            double A_ik = A[ii * m + kk];
+            for (int jj = j; jj < j_end; ++jj) {
+              mtrx_C[ii * m + jj] += A_ik * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mtrx_C;
+}
+
+std::vector<double> multiplyMatrix(const std::vector<double>& A, const std::vector<double>& B, int rows_A, int col_B) {
+  int col_A = rows_A;
+  std::vector<double> mtrx_C(rows_A * col_B, 0.0);
+
+  if (rows_A == 0 || col_B == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < rows_A; ++i) {
+    for (int j = 0; j < col_B; ++j) {
+      for (int k = 0; k < col_A; ++k) {
+        mtrx_C[i * col_B + j] += A[i * col_A + k] * B[k * col_B + j];
+      }
+    }
+  }
+  return mtrx_C;
+}
+
+bool TestTaskSequentialNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTaskSequentialNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTaskSequentialNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMatrixMultiplication(A, B, n, m);
+  return true;
+}
+
+bool TestTaskSequentialNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Nedelin Dmitry
+#include "omp/nedelin_d_omp_cannons_algorithm/include/ops_omp.hpp"
+
+#include <omp.h>
+
+#include <algorithm>
+#include <iostream>
+
+std::vector<double> cannonMtrxMultiplication(const std::vector<double>& A, const std::vector<double>& B, int n, int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < n; i += SizeBlock) {
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int kk = k; kk < k_end; ++kk) {
+            double A_ik = A[ii * m + kk];
+            for (int jj = j; jj < j_end; ++jj) {
+              mtrx_C[ii * m + jj] += A_ik * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mtrx_C;
+}
+
+std::vector<double> cannonMtrxMultiplication_omp(const std::vector<double>& A, const std::vector<double>& B, int n,
+                                                 int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+#pragma omp parallel for
+  for (int i = 0; i < n; i += SizeBlock) {
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+#pragma omp parallel for
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int kk = k; kk < k_end; ++kk) {
+            double A_ik = A[ii * m + kk];
+            for (int jj = j; jj < j_end; ++jj) {
+              mtrx_C[ii * m + jj] += A_ik * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mtrx_C;
+}
+
+std::vector<double> multiplyMtrx(const std::vector<double>& A, const std::vector<double>& B, int rows_A, int col_B) {
+  int col_A = rows_A;
+  std::vector<double> mtrx_C(rows_A * col_B, 0.0);
+
+  if (rows_A == 0 || col_B == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < rows_A; ++i) {
+    for (int j = 0; j < col_B; ++j) {
+      for (int k = 0; k < col_A; ++k) {
+        mtrx_C[i * col_B + j] += A[i * col_A + k] * B[k * col_B + j];
+      }
+    }
+  }
+  return mtrx_C;
+}
+
+std::vector<double> RndMatrix(int rows, int cols) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_real_distribution<double> dis(1.0, 20.0);
+
+  std::vector<double> res_mtrx(rows * cols);
+
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      res_mtrx[i * cols + j] = dis(gen);
+    }
+  }
+
+  return res_mtrx;
+}
+
+bool TestOMPSequentialNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestOMPSequentialNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestOMPSequentialNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication(A, B, n, m);
+  return true;
+}
+
+bool TestOMPSequentialNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+
+bool TestTaskOMPParallelNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTaskOMPParallelNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTaskOMPParallelNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication_omp(A, B, n, m);
+  return true;
+}
+
+bool TestTaskOMPParallelNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Nedelin Dmitry
+#include "tbb/nedelin_d_tbb_cannons_algorithm/include/ops_tbb.hpp"
+
+#include <tbb/tbb.h>
+
+#include <algorithm>
+#include <iostream>
+
+#undef min
+
+std::vector<double> cannonMtrxMultiplication(const std::vector<double>& A, const std::vector<double>& B, int n, int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < n; i += SizeBlock) {
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int kk = k; kk < k_end; ++kk) {
+            double A_ik = A[ii * m + kk];
+            for (int jj = j; jj < j_end; ++jj) {
+              mtrx_C[ii * m + jj] += A_ik * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mtrx_C;
+}
+
+std::vector<double> cannonMtrxMultiplication_tbb(const std::vector<double>& A, const std::vector<double>& B, int n,
+                                                 int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  tbb::parallel_for(0, n, SizeBlock, [&](int i) {
+    std::vector<double> tmp_accum(n * m, 0.0);
+
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int jj = j; jj < j_end; ++jj) {
+            for (int kk = k; kk < k_end; ++kk) {
+              tmp_accum[ii * m + jj] += A[ii * m + kk] * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+
+    for (int num = 0; num < n * m; ++num) {
+      mtrx_C[num] += tmp_accum[num];
+    }
+  });
+
+  return mtrx_C;
+}
+
+std::vector<double> multiplyMtrx(const std::vector<double>& A, const std::vector<double>& B, int rows_A, int col_B) {
+  int col_A = rows_A;
+  std::vector<double> mtrx_C(rows_A * col_B, 0.0);
+
+  if (rows_A == 0 || col_B == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < rows_A; ++i) {
+    for (int j = 0; j < col_B; ++j) {
+      for (int k = 0; k < col_A; ++k) {
+        mtrx_C[i * col_B + j] += A[i * col_A + k] * B[k * col_B + j];
+      }
+    }
+  }
+  return mtrx_C;
+}
+
+std::vector<double> RndMatrix(int rows, int cols) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_real_distribution<double> dis(1.0, 20.0);
+
+  std::vector<double> res_mtrx(rows * cols);
+
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      res_mtrx[i * cols + j] = dis(gen);
+    }
+  }
+
+  return res_mtrx;
+}
+
+bool TestTBBSequentialNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTBBSequentialNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTBBSequentialNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication(A, B, n, m);
+  return true;
+}
+
+bool TestTBBSequentialNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+
+bool TestTaskTBBParallelNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTaskTBBParallelNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTaskTBBParallelNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication_tbb(A, B, n, m);
+  return true;
+}
+
+bool TestTaskTBBParallelNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Nedelin Dmitry
+#include "stl/nedelin_d_stl_cannons_algorithm/include/ops_stl.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <thread>
+
+#undef min
+
+std::vector<double> cannonMtrxMultiplication(const std::vector<double>& A, const std::vector<double>& B, int n, int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < n; i += SizeBlock) {
+    for (int j = 0; j < m; j += SizeBlock) {
+      for (int k = 0; k < m; k += SizeBlock) {
+        int i_end = std::min(i + SizeBlock, n);
+        int j_end = std::min(j + SizeBlock, m);
+        int k_end = std::min(k + SizeBlock, m);
+
+        for (int ii = i; ii < i_end; ++ii) {
+          for (int kk = k; kk < k_end; ++kk) {
+            double A_ik = A[ii * m + kk];
+            for (int jj = j; jj < j_end; ++jj) {
+              mtrx_C[ii * m + jj] += A_ik * B[kk * m + jj];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return mtrx_C;
+}
+
+void BlocksMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, int n, int m,
+                    int _SizeBlock, int _iCount, int _jCount, int _kCount) {
+  for (int i = _iCount; i < std::min(_iCount + _SizeBlock, n); ++i) {
+    for (int j = _jCount; j < std::min(_jCount + _SizeBlock, m); ++j) {
+      for (int k = _kCount; k < std::min(_kCount + _SizeBlock, m); ++k) {
+        C[i * m + j] += A[i * m + k] * B[k * m + j];
+      }
+    }
+  }
+}
+
+std::vector<double> cannonMtrxMultiplication_tbb(const std::vector<double>& A, const std::vector<double>& B, int n,
+                                                 int m) {
+  int SizeBlock = std::min(n, m);
+
+  std::vector<double> mtrx_C(n * m, 0.0);
+
+  if (n == 0 || m == 0) {
+    return std::vector<double>();
+  }
+
+  int Threads_num = std::thread::hardware_concurrency();
+  if (Threads_num == 0) {
+    Threads_num = 1;
+  }
+
+  std::vector<std::thread> threads(Threads_num);
+  int SizeBlockForThread = (n + Threads_num - 1) / Threads_num;
+
+  for (int thrd = 0; thrd < Threads_num; ++thrd) {
+    int RowBeg = thrd * SizeBlockForThread;
+    int RowEnd = std::min((thrd + 1) * SizeBlockForThread, n);
+
+    threads[thrd] = std::thread([&, RowBeg, RowEnd] {
+      std::vector<double> loc_mtrx_C(n * m, 0.0);
+
+      for (int i = RowBeg; i < RowEnd; i += SizeBlock) {
+        for (int j = 0; j < m; j += SizeBlock) {
+          for (int k = 0; k < m; k += SizeBlock) {
+            BlocksMultiply(A, B, loc_mtrx_C, n, m, SizeBlock, i, j, k);
+          }
+        }
+      }
+
+      for (int i = RowBeg; i < RowEnd; ++i) {
+        for (int j = 0; j < m; ++j) {
+          mtrx_C[i * m + j] += loc_mtrx_C[i * m + j];
+        }
+      }
+    });
+  }
+
+  for (auto& thread : threads) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+
+  return mtrx_C;
+}
+
+std::vector<double> multiplyMtrx(const std::vector<double>& A, const std::vector<double>& B, int rows_A, int col_B) {
+  int col_A = rows_A;
+  std::vector<double> mtrx_C(rows_A * col_B, 0.0);
+
+  if (rows_A == 0 || col_B == 0) {
+    return std::vector<double>();
+  }
+
+  for (int i = 0; i < rows_A; ++i) {
+    for (int j = 0; j < col_B; ++j) {
+      for (int k = 0; k < col_A; ++k) {
+        mtrx_C[i * col_B + j] += A[i * col_A + k] * B[k * col_B + j];
+      }
+    }
+  }
+  return mtrx_C;
+}
+
+std::vector<double> RndMatrix(int rows, int cols) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_real_distribution<double> dis(1.0, 20.0);
+
+  std::vector<double> res_mtrx(rows * cols);
+
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      res_mtrx[i * cols + j] = dis(gen);
+    }
+  }
+
+  return res_mtrx;
+}
+
+bool TestTBBSequentialNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTBBSequentialNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTBBSequentialNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication(A, B, n, m);
+  return true;
+}
+
+bool TestTBBSequentialNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+
+bool TestTaskSTLParallelNedelinCannon::pre_processing() {
+  internal_order_test();
+
+  A = std::vector<double>(taskData->inputs_count[0]);
+  B = std::vector<double>(taskData->inputs_count[1]);
+
+  n = *reinterpret_cast<int*>(taskData->inputs[2]);
+  m = *reinterpret_cast<int*>(taskData->inputs[3]);
+
+  auto* tmp_ptr_A = reinterpret_cast<double*>(taskData->inputs[0]);
+  for (size_t i = 0; i < taskData->inputs_count[0]; i++) {
+    A[i] = tmp_ptr_A[i];
+  }
+
+  auto* tmp_ptr_B = reinterpret_cast<double*>(taskData->inputs[1]);
+  for (size_t i = 0; i < taskData->inputs_count[1]; i++) {
+    B[i] = tmp_ptr_B[i];
+  }
+  return true;
+}
+
+bool TestTaskSTLParallelNedelinCannon::validation() {
+  internal_order_test();
+
+  return taskData->inputs_count[0] == taskData->inputs_count[1] &&
+         taskData->inputs_count[0] == taskData->outputs_count[0] &&
+         taskData->inputs_count[1] == taskData->outputs_count[0];
+}
+
+bool TestTaskSTLParallelNedelinCannon::run() {
+  internal_order_test();
+  res = cannonMtrxMultiplication_tbb(A, B, n, m);
+  return true;
+}
+
+bool TestTaskSTLParallelNedelinCannon::post_processing() {
+  internal_order_test();
+  std::copy(res.begin(), res.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+\end{lstlisting}
+
+\end{document}
