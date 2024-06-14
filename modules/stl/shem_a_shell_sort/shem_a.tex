@@ -165,7 +165,7 @@
 \subsection{Реализация простого слияния}
 
 \begin{lstlisting}[language=C++]
-std::vector<int> ShellTaskOMP::merge(const std::vector<std::vector<int>>& chunks):
+std::vector<int> ShellTaskOMP::merge(const std::vector<std::vector<int>>& chunks)
 \end{lstlisting}
 
 \par Входные данные: \cpp{const std::vector<std::vector<int>>\& chunks} -- вектор, содержащий несколько отсортированных векторов, которые нужно будет объединить.
@@ -176,7 +176,7 @@ std::vector<int> ShellTaskOMP::merge(const std::vector<std::vector<int>>& chunks
 \subsection{Реализация OpenMP}
 
 \par Параллельная сортировка векторов реализуется с использованием директивы OpenMP \cpp{\#pragma omp parallel for} для параллельного выполнения цикла. Каждый поток сортирует свой вектор с помощью последовательной сортировки Шелла.
-\par Синхронизация реализуется с помощью барьер синхронизации \cpp{\#pragma omp barrier}, чтобы убедиться, что все потоки завершили сортировку своих векторов :
+\par Синхронизация реализуется с помощью барьер синхронизации \cpp{\#pragma omp barrier}, чтобы убедиться, что все потоки завершили сортировку своих векторов.
 \par  Объединяем отсортированные векторы с помощью функции слияния \cpp{merge}
 
 
