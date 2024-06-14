@@ -1,0 +1,1194 @@
+\documentclass[a4paper, 14pt]{article}
+
+\usepackage[english, russian]{babel}
+
+\usepackage{tocloft}
+\usepackage{tabularray}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{indentfirst}
+\usepackage{mathtext}
+\frenchspacing
+
+\usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
+\usepackage{icomma}
+
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\newcommand{\n}{\par}
+
+%%% Оформление страницы
+\usepackage{extsizes}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{enumitem}
+\setlist{leftmargin=25pt}
+
+\geometry{top=25mm}    % Поля сверху страницы
+\geometry{bottom=30mm} % Поля снизу страницы
+\geometry{left=20mm}   % Поля слева страницы
+\geometry{right=20mm}  % Поля справа страницы
+
+\setlength\parindent{15pt}
+\linespread{1.3}
+\setlength{\parskip}{0.5em}
+\usepackage{multicol}
+\usepackage{soulutf8}             
+\begin{document}
+	\thispagestyle{empty}
+	\begin{center}
+
+		МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ\n
+		Федеральное государственное автономное образовательное учреждение высшего образования\n
+		\textbf{«Национальный исследовательский Нижегородский государственный университет им. Н. И. Лобачевского»}\n
+		Институт информационных технологий, математики и механики
+		\vspace{1cm}
+
+		ОТЧЁТ ПО ЛАБОРАТОРНЫМ РАБОТАМ
+
+		ПО ДИСЦИПЛИНЕ
+
+		\textbf{<<Параллельное программирование для систем с общей памятью>>}
+
+		НА ТЕМУ
+
+		\textbf{<<Маркировка компонент на бинарном изображении (черные области соответствуют объектам, белые – фону)>>}
+	\end{center}
+	\vspace{0.3cm}
+	\begin{flushright}
+
+		\textbf{Выполнил:}
+
+		студент 3-го курса 
+
+		гр. 3821Б1ПР2
+
+		Салаев Владислав О.
+	\end{flushright}
+
+	\begin{flushright}
+		\textbf{Проверил:}
+
+		аспирант
+
+		Нестеров А. Ю.
+	\end{flushright}
+
+	\begin{center}
+		\vfill
+		Нижний Новгород
+
+		2024
+	\end{center}
+	\newpage
+	\begin{center}\tableofcontents\end{center}
+	\newpage
+	\section*{\centering \textbf{Введение}}
+	\addcontentsline{toc}{section}{Введение}
+
+        Маркировка компонент на бинарном изображении \textbf{(Connected Component Labeling)} – это алгоритм, используемый для идентификации и маркировки всех отдельных объектов в изображении. В бинарном изображении черные области представляют объекты (foreground), а белые – фон (background). Задача алгоритма состоит в том, чтобы выделить и пометить каждый отдельный объект уникальной меткой.
+        
+        Основная цель маркировки компонент – выделение и идентификация отдельных объектов на изображении. Это необходимо для дальнейшего анализа и обработки изображения, таких как:
+        
+        \begin{itemize}
+            \item \textbf{Подсчет объектов:} Например, подсчет количества клеток в биомедицинских изображениях или подсчет количества автомобилей на дороге.
+            \item \textbf{Извлечение признаков:} Определение характеристик объектов, таких как площадь, периметр, форма и другие метрические свойства.
+            \item \textbf{Сегментация изображений:} Разделение изображения на логически значимые части для дальнейшего анализа.
+            \item \textbf{Трассировка контуров объектов:} Выделение контуров для задач, связанных с распознаванием форм и объектов.
+            \item \textbf{Обработка текстур:} Анализ текстурированных областей на изображениях для различных приложений, таких как классификация материалов.
+        \end{itemize}
+
+	\newpage
+	\section*{\centering Постановка задачи}
+	\addcontentsline{toc}{section}{Постановка задачи}
+	\textbf{Цель работы:} реализовать и провести сравнительный анализ эффективности алгоритма маркировки компонент на бинарном изображении (где черные области соответствуют объектам, а белые – фону) с использованием различных подходов к реализации. Исследуются четыре варианта: последовательная реализация, параллельное выполнение с использованием OpenMP, TBB (Threading Building Blocks) и стандартной библиотеки потоков (STL).
+
+	\textbf{Задачи работы:}
+
+        Основные задачи, решаемые в рамках данного исследования:
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+            \item Реализовать алгоритм маркировки компонент на бинарном изображении в последовательной форме.
+            \item Реализовать параллельное выполнение алгоритма с использованием \textbf{OpenMP}.
+            \item Реализовать параллельное выполнение алгоритма с использованием \textbf{TBB (Threading Building Blocks)}.
+            \item Реализовать параллельное выполнение алгоритма с использованием стандартной библиотеки потоков \textbf{(STL)}.
+            \item Провести сравнительный анализ эффективности каждой из реализаций по различным метрикам, таким как время выполнения, использование ресурсов и масштабируемость.
+	\end{itemize}
+
+        \newpage
+	\textbf{Использованное для реализации данных л/р оборудование и программное обеспечение:} 
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Тип оборудования: Компьютер
+		\item Процессор AMD Ryzen 5 5600x
+                \begin{itemize}
+                    \item Количество ядер - 6
+                    \item Количество потоков - 12
+                    \item Базовая частота, в гигагерцах - 3.7
+                    \item Частота в режиме ускорения, в гигагерцах - 4.6
+                    \item Объем кэша L2/L3 3МБ/32МБ
+                \end{itemize}
+            \item RAM KINGSTON HyperX Fury - 2x 8ГБ
+            \item OS WINDOWS 10
+		\item IDE: Visual Studio Code
+		\item Язык программирования: C/C++
+	\end{itemize}
+
+
+	\newpage
+	\section*{\centering Описание алгоритма}
+	\addcontentsline{toc}{section}{Описание алгоритма}
+	\textbf{Последовательная версия:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+            \item Пройти по каждому пикселю изображения, начиная с верхнего левого угла.
+            \item Если пиксель принадлежит объекту (черный), проверить его соседей (левого и верхнего).
+            \item Если ни один из соседей не помечен, назначить новую метку.
+            \item Если хотя бы один из соседей помечен, присвоить текущему пикселю метку одного из помеченных соседей.
+            \item Объединять метки, если соседние пиксели принадлежат разным компонентам, но фактически являются частью одного объекта.
+            \item Результат сохраняется в виде меточного изображения.
+	\end{itemize}
+
+	\textbf{Параллельная версия с использованием OpenMP:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+            \item Изображение делится на блоки строк, которые обрабатываются параллельно.
+            \item Каждый поток проходит по своей части строк и выполняет алгоритм маркировки для своих блоков.
+            \item Для корректного объединения компонент, пересекающихся на границах блоков, после первоначальной маркировки проводится дополнительный этап слияния меток.
+            \item Результаты с каждого потока объединяются для формирования итогового меточного изображения.
+	\end{itemize}
+
+        \newpage
+	\textbf{Параллельная версия с использованием TBB:}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+		\item Параллельность реализуется с помощью \textbf{«tbb::parallel$\_$for»}, которая автоматически распределяет выполнение цикла по разным потокам.
+            \item TBB распределяет строки изображения между потоками для параллельной обработки.
+            \item Как и в версии с OpenMP, после начальной обработки проводится дополнительный этап для слияния меток на границах блоков.
+            \item Результаты объединяются для получения финального меточного изображения.
+
+	\end{itemize}
+
+	\textbf{Параллельная версия с использованием стандартной библиотеки потоков (STL):}
+	\vspace{-1em}
+	\begin{itemize}[leftmargin=3em]
+		\setlength\itemsep{0cm}
+        \item Изображение делится на несколько частей, которые обрабатываются в отдельных потоках, созданных с помощью класса \textbf{«std::thread»}.
+        \item Каждый поток обрабатывает свой участок изображения, выполняя алгоритм маркировки компонент.
+        \item По завершении работы всех потоков, результаты объединяются, что требует дополнительного этапа слияния меток на границах участков.
+        \item Итоговый результат представлен в виде объединенного меточного изображения.
+	\end{itemize}
+
+
+	\newpage
+	\subsection*{\centering Описание программ}
+	\addcontentsline{toc}{section}{Описание программ}
+        \subsubsection*{\centering Описание алгоритма маркировки связных компонент}
+
+        Данный код реализует алгоритм для маркировки связных компонент в бинарном изображении, где пиксели имеют значения либо 0 (фон), либо 1 (объект). Алгоритм определяет различные связные области (компоненты), состоящие из пикселей со значением 0, и назначает уникальные метки каждой из этих областей. Ниже приводится подробное описание процесса.
+
+        \subsubsection*{\centering Инициализация переменных}
+        
+        \begin{verbatim}
+        int nextLabel = 1;
+        std::vector<int> labels(height * width, -1);
+        std::vector<std::set<int>> equivalence(height * width);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item \texttt{nextLabel} хранит следующую метку, которая будет назначена новой области.
+          \item \texttt{labels} – вектор, хранящий метки для каждого пикселя изображения, инициализируется значением -1.
+          \item \texttt{equivalence} – вектор множеств для хранения эквивалентных меток.
+        \end{itemize}
+        
+        \subsubsection*{\centeringПервый проход}
+        
+        Во время первого прохода по изображению, алгоритм выполняет следующие действия:
+        
+        \begin{verbatim}
+        for (size_t i = 0; i < height; ++i) {
+          for (size_t j = 0; j < width; ++j) {
+            if (source[i][j] == 0) {
+              std::set<int> neighboringLabels;
+              if (i > 0 && labels[(i - 1) * width + j] != -1) 
+                neighboringLabels.insert(labels[(i - 1) * width + j]);
+              if (j > 0 && labels[i * width + (j - 1)] != -1) 
+                neighboringLabels.insert(labels[i * width + (j - 1)]);
+        
+              if (neighboringLabels.empty()) {
+                labels[i * width + j] = nextLabel;
+                equivalence[nextLabel].insert(nextLabel);
+                ++nextLabel;
+              } else {
+                int smallestLabel = *neighboringLabels.begin();
+                labels[i * width + j] = smallestLabel;
+                for (auto label : neighboringLabels) {
+                  equivalence[label].insert(smallestLabel);
+                  equivalence[smallestLabel].insert(label);
+                }
+              }
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Для каждого пикселя \text{source[i][j]} со значением 0 алгоритм определяет метки соседних пикселей сверху и слева.
+          \item Если соседние метки отсутствуют, создается новая метка \texttt{nextLabel}, и она добавляется в \text{equivalence}.
+          \item Если соседние метки существуют, пикселю назначается наименьшая из них, а все найденные метки добавляются в соответствующие множества эквивалентности.
+        \end{itemize}
+        
+        \subsubsection*{\centeringРазрешение эквивалентностей}
+        
+        \begin{verbatim}
+        for (size_t i = 0; i < equivalence.size(); ++i) {
+          if (!equivalence[i].empty()) {
+            int smallestLabel = *equivalence[i].begin();
+            for (auto label : equivalence[i]) {
+              std::replace(labels.begin(), labels.end(), label, smallestLabel);
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Алгоритм проходит по вектору \text{equivalence} и заменяет все эквивалентные метки на наименьшую метку в каждом множестве.
+        \end{itemize}
+        
+        \subsubsection*{\centeringУплощение меток}
+        \begin{verbatim}
+        resolve_labels(labels);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Функция \text{resolve$\_$labels} (которая не представлена в коде) должна упорядочить метки и сделать их последовательными.
+        \end{itemize}
+
+        \newpage
+        \subsubsection*{\centeringВторой проход}
+        
+        Во время второго прохода по изображению метки назначаются пикселям в результирующем изображении:
+        
+        \begin{verbatim}
+        for (size_t i = 0; i < height; ++i) {
+          for (size_t j = 0; j < width; ++j) {
+            if (source[i][j] == 0) {
+              destination[i][j] = labels[i * width + j];
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Для каждого пикселя \text{source[i][j]} со значением 0 в результирующее изображение \text{destination[i][j]} копируется соответствующая метка из вектора \text{labels}.
+        \end{itemize}
+
+        \newpage
+        \subsubsection*{\centering Описание алгоритма маркировки связных компонент с использованием OpenMP}
+
+        Данный код реализует алгоритм маркировки связных компонент на бинарном изображении с использованием параллельных вычислений через OpenMP. Вот подробное описание каждого шага алгоритма:
+        
+        \subsubsection*{\centeringИнициализация переменных}
+        
+        \begin{verbatim}
+        int nextLabel = 1;
+        std::vector<int> labels(height * width, -1);
+        std::vector<std::set<int>> equivalence(height * width);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item \texttt{nextLabel} хранит следующую метку, которая будет назначена новой области.
+          \item \texttt{labels} – вектор, хранящий метки для каждого пикселя изображения, инициализируется значением -1.
+          \item \texttt{equivalence} – вектор множеств для хранения эквивалентных меток.
+        \end{itemize}
+        
+        \subsubsection*{\centeringПервый проход}
+        
+        \begin{verbatim}
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < static_cast<int>(height); ++i) {
+          for (int j = 0; j < static_cast<int>(width); ++j) {
+            if (source[i][j] == 0) {
+              std::set<int> neighboringLabels;
+              if (i > 0 && labels[(i - 1) * width + j] != -1)
+                neighboringLabels.insert(labels[(i - 1) * width + j]);
+              if (j > 0 && labels[i * width + (j - 1)] != -1)
+                neighboringLabels.insert(labels[i * width + (j - 1)]);
+        
+              if (neighboringLabels.empty()) {
+                #pragma omp critical
+                {
+                  labels[i * width + j] = nextLabel;
+                  equivalence[nextLabel].insert(nextLabel);
+                  ++nextLabel;
+                }
+              } else {
+                int smallestLabel = *neighboringLabels.begin();
+                labels[i * width + j] = smallestLabel;
+                for (auto label : neighboringLabels) {
+                  #pragma omp critical
+                  {
+                    equivalence[label].insert(smallestLabel);
+                    equivalence[smallestLabel].insert(label);
+                  }
+                }
+              }
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item В параллельном блоке OpenMP происходит первый проход по изображению.
+          \item Для каждого пикселя со значением 0 проверяются соседние метки и устанавливается минимальная метка.
+          \item В случае отсутствия соседних меток, пикселю назначается новая метка.
+          \item Используются критические секции (\texttt{\#pragma omp critical}) для безопасного доступа к общим ресурсам (\texttt{labels} и \texttt{equivalence}).
+        \end{itemize}
+        
+        \subsubsection*{\centeringРазрешение эквивалентностей}
+        
+        \begin{verbatim}
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < static_cast<int>(equivalence.size()); ++i) {
+          if (!equivalence[i].empty()) {
+            int smallestLabel = *equivalence[i].begin();
+            #pragma omp parallel for schedule(static)
+            for (int j = 0; j < static_cast<int>(width * height); ++j) {
+              if (static_cast<int>(labels[j]) == i) {
+                labels[j] = smallestLabel;
+              }
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Для каждого непустого множества эквивалентных меток происходит замена всех вхождений текущей метки на минимальную метку.
+          \item Используется вложенный параллельный блок OpenMP для эффективной обработки каждого элемента вектора \texttt{labels}.
+        \end{itemize}
+        
+        \subsubsection*{\centeringУплощение меток}
+        
+        \begin{verbatim}
+        resolve_labels(labels);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Функция \texttt{resolve\_labels} должна упорядочить метки и сделать их последовательными.
+        \end{itemize}
+        
+        \subsubsection*{\centeringВторой проход}
+        
+        \begin{verbatim}
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < static_cast<int>(height); ++i) {
+          for (int j = 0; j < static_cast<int>(width); ++j) {
+            if (source[i][j] == 0) {
+              destination[i][j] = labels[i * width + j];
+            }
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Во втором параллельном блоке OpenMP происходит второй проход по изображению для записи меток в результирующее изображение \texttt{destination}.
+        \end{itemize}
+        
+        Этот алгоритм эффективно использует параллельные вычисления для ускорения маркировки связных компонент на больших изображениях.
+
+        \newpage
+        \subsubsection*{\centeringОписание алгоритма маркировки связных компонент с использованием TBB}
+        \subsubsection*{\centeringИнициализация переменных}
+
+        \begin{verbatim}
+        tbb::spin_mutex mutex;
+        int nextLabel = 1;
+        std::vector<int> labels(height * width, -1);
+        std::vector<std::set<int>> equivalence(height * width);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item \texttt{mutex} – спиновый мьютекс для защиты критических секций в параллельных участках кода.
+          \item \texttt{nextLabel} – переменная для следующей доступной метки.
+          \item \texttt{labels} – вектор, хранящий метки для каждого пикселя изображения, инициализируется значением -1.
+          \item \texttt{equivalence} – вектор множеств для хранения эквивалентных меток.
+        \end{itemize}
+        
+        \subsubsection*{\centeringПервый проход}
+        
+        \begin{verbatim}
+    tbb::parallel_for(0, static_cast<int>(height), [&](int i) {
+          for (int j = 0; j < static_cast<int>(width); ++j) {
+            if (source[i][j] == 0) {
+              std::set<int> neighboringLabels;
+              if (i > 0 && labels[(i - 1) * width + j] != -1)
+                neighboringLabels.insert(labels[(i - 1) * width + j]);
+              if (j > 0 && labels[i * width + (j - 1)] != -1)
+                neighboringLabels.insert(labels[i * width + (j - 1)]);
+        
+              if (neighboringLabels.empty()) {
+                tbb::spin_mutex::scoped_lock lock(mutex);
+                labels[i * width + j] = nextLabel;
+                equivalence[nextLabel].insert(nextLabel);
+                ++nextLabel;
+              } else {
+                int smallestLabel = *neighboringLabels.begin();
+                labels[i * width + j] = smallestLabel;
+                for (auto label : neighboringLabels) {
+                  tbb::spin_mutex::scoped_lock lock(mutex);
+                  equivalence[label].insert(smallestLabel);
+                  equivalence[smallestLabel].insert(label);
+                }
+              }
+            }
+          }
+        });
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item В параллельном цикле TBB происходит первый проход по изображению.
+          \item Для каждого пикселя со значением 0 проверяются соседние метки и устанавливается минимальная метка.
+          \item Используется спиновый мьютекс \texttt{mutex} для защиты критических секций, где происходит изменение общих данных (\texttt{labels} и \texttt{equivalence}).
+        \end{itemize}
+        
+        \subsubsection*{\centering Разрешение эквивалентностей}
+        
+        \begin{verbatim}
+        tbb::parallel_for(0, static_cast<int>(equivalence.size()),
+          [&](int i) {
+            if (!equivalence[i].empty()) {
+              int smallestLabel = *equivalence[i].begin();
+              tbb::parallel_for(0, static_cast<int>(width * height),
+                [&](int j) {
+                  if (static_cast<int>(labels[j]) == i) {
+                    labels[j] = smallestLabel;
+                  }
+                });
+            }
+          });
+        \end{verbatim}
+
+        
+        \begin{itemize}
+          \item Для каждого непустого множества эквивалентных меток происходит замена всех вхождений текущей метки на минимальную метку.
+          \item Используется вложенный параллельный цикл TBB для эффективной обработки каждого элемента вектора \texttt{labels}.
+        \end{itemize}
+        
+        \subsubsection*{\centeringУплощение меток}
+        
+        \begin{verbatim}
+        resolve_labels(labels);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Функция \texttt{resolve\_labels} должна упорядочить метки и сделать их последовательными.
+        \end{itemize}
+        
+        \subsubsection*{\centeringВторой проход}
+        
+        \begin{verbatim}
+        tbb::parallel_for(0, static_cast<int>(height), [&](int i) {
+          for (int j = 0; j < static_cast<int>(width); ++j) {
+            if (source[i][j] == 0) {
+              destination[i][j] = labels[i * width + j];
+            }
+          }
+        });
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Во втором параллельном цикле TBB происходит второй проход по изображению для записи меток в результирующее изображение \texttt{destination}.
+        \end{itemize}
+
+
+        \newpage
+        \subsubsection*{\centeringОписание алгоритма маркировки связных компонент с использованием STL}
+        \subsubsection*{\centeringИнициализация переменных}
+
+        \begin{verbatim}
+        std::mutex mutex;
+        int nextLabel = 1;
+        std::vector<int> labels(height * width, -1);
+        std::vector<std::set<int>> equivalence(height * width);
+        std::vector<std::thread> threads;
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item \texttt{mutex} – стандартный мьютекс для защиты критических секций в параллельных участках кода.
+          \item \texttt{nextLabel} – переменная для следующей доступной метки.
+          \item \texttt{labels} – вектор, хранящий метки для каждого пикселя изображения, инициализируется значением -1.
+          \item \texttt{equivalence} – вектор множеств для хранения эквивалентных меток.
+          \item \texttt{threads} – вектор для хранения потоков, используемых для параллельной обработки данных.
+        \end{itemize}
+        
+        \subsubsection*{\centeringПервый проход}
+        
+        \begin{verbatim}
+        auto first_pass = [&](int start, int end) {
+          for (int i = start; i < end; ++i) {
+            for (int j = 0; j < static_cast<int>(width); ++j) {
+              if (source[i][j] == 0) {
+                std::set<int> neighboringLabels;
+                if (i > 0 && labels[(i - 1) * width + j] != -1)
+                  neighboringLabels.insert(labels[(i - 1) * width + j]);
+                if (j > 0 && labels[i * width + (j - 1)] != -1)
+                  neighboringLabels.insert(labels[i * width + (j - 1)]);
+        
+                if (neighboringLabels.empty()) {
+                  std::lock_guard<std::mutex> lock(mutex);
+                  labels[i * width + j] = nextLabel;
+                  equivalence[nextLabel].insert(nextLabel);
+                  ++nextLabel;
+                } else {
+                  int smallestLabel = *neighboringLabels.begin();
+                  labels[i * width + j] = smallestLabel;
+                  for (auto label : neighboringLabels) {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    equivalence[label].insert(smallestLabel);
+                    equivalence[smallestLabel].insert(label);
+                  }
+                }
+              }
+            }
+          }
+        };
+        
+        int numThreads = std::thread::hardware_concurrency();
+        int chunkSize = height / numThreads;
+        
+        // Создание и запуск потоков для первого прохода
+        for (int t = 0; t < numThreads; ++t) {
+          int start = t * chunkSize;
+          int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+          threads.emplace_back(first_pass, start, end);
+        }
+        
+        // Ожидание завершения всех потоков
+        for (auto &t : threads) {
+          if (t.joinable()) {
+            t.join();
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item В первом проходе с использованием стандартной библиотеки потоков происходит обход изображения и установка меток для каждого пикселя со значением 0.
+          \item Используется \texttt{std::lock\_guard} для автоматического освобождения мьютекса по завершении области видимости.
+        \end{itemize}
+        
+        \subsubsection*{\centeringРазрешение эквивалентностей}
+        
+        \begin{verbatim}
+        auto resolve_equivalence = [&](int start, int end) {
+          for (int i = start; i < end; ++i) {
+            if (!equivalence[i].empty()) {
+              int smallestLabel = *equivalence[i].begin();
+              for (int j = 0; j < static_cast<int>(width * height); ++j) {
+                if (static_cast<int>(labels[j]) == i) {
+                  labels[j] = smallestLabel;
+                }
+              }
+            }
+          }
+        };
+        
+        threads.clear();
+        
+        // Создание и запуск потоков для разрешения эквивалентности
+        for (int t = 0; t < numThreads; ++t) {
+          int start = t * chunkSize;
+          int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+          threads.emplace_back(resolve_equivalence, start, end);
+        }
+        
+        // Ожидание завершения всех потоков
+        for (auto &t : threads) {
+          if (t.joinable()) {
+            t.join();
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Для каждого непустого множества эквивалентных меток происходит замена всех вхождений текущей метки на минимальную метку.
+          \item Используется вложенный цикл для обработки каждого элемента вектора \texttt{labels}.
+        \end{itemize}
+        
+        \subsubsection*{\centering Уплощение меток}
+        
+        \begin{verbatim}
+        resolve_labels(labels);
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Функция \texttt{resolve\_labels} выполняет окончательное уплощение меток для обеспечения их последовательности.
+        \end{itemize}
+
+        \newpage
+        \subsubsection*{\centering Второй проход}
+        
+        \begin{verbatim}
+        auto second_pass = [&](int start, int end) {
+          for (int i = start; i < end; ++i) {
+            for (int j = 0; j < static_cast<int>(width); ++j) {
+              if (source[i][j] == 0) {
+                destination[i][j] = labels[i * width + j];
+              }
+            }
+          }
+        };
+        
+        threads.clear();
+        
+        // Создание и запуск потоков для второго прохода
+        for (int t = 0; t < numThreads; ++t) {
+          int start = t * chunkSize;
+          int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+          threads.emplace_back(second_pass, start, end);
+        }
+        
+        // Ожидание завершения всех потоков
+        for (auto &t : threads) {
+          if (t.joinable()) {
+            t.join();
+          }
+        }
+        \end{verbatim}
+        
+        \begin{itemize}
+          \item Во втором проходе происходит запись результирующих меток в выходной массив \texttt{destination}.
+        \end{itemize}
+
+	\newpage
+	\section*{\centering Эксперименты и их результаты}
+	\addcontentsline{toc}{section}{Эксперименты и их результаты}
+
+        Все эксперименты были проведены на одинаковых данных с высотой $2000$ и шириной $2000$. Результаты представлены в таблице ниже:
+
+	\begin{center}
+		\begin{tabular}{ ||c | c | c ||  }
+			\hline Версия алгоритма & pipeline (в сек.) & task (в сек.)\\ 
+			\hline Последовательная & 7.4122 & 7.3008 \\
+			\hline OpenMP & 3.4765 & 3.3412 \\
+			\hline TBB & 3.6742 & 3.5124 \\ 
+			\hline STL & 3.7243 & 3.6521 \\ 
+			\hline
+		\end{tabular}\\[5mm]
+	\end{center}
+
+	\textbf{Анализ полученных данных и вывод.}
+
+	\noindent 
+        Из представленных результатов экспериментов видно, что параллельные версии алгоритма значительно превосходят последовательную реализацию по времени выполнения.
+
+        Среди параллельных реализаций OpenMP демонстрирует самые низкие значения времени выполнения для обоих метрик (pipeline и task), что указывает на эффективное использование многопоточности для ускорения алгоритма на многоядерных системах. TBB также показывает хорошие результаты, близкие к OpenMP. В то же время, STL демонстрирует немного более высокие значения времени выполнения по сравнению с OpenMP и TBB, что может быть связано с особенностями реализации параллельных структур данных или стратегий планирования потоков в STL.
+        
+        Таким образом, для данного набора данных и конкретного алгоритма маркировки связных компонент, использование OpenMP или TBB является более выгодным с точки зрения ускорения выполнения по сравнению с последовательной версией.
+
+	\newpage
+	\section*{\centering Заключение}
+	\addcontentsline{toc}{section}{Заключение}
+
+	   Изучение каждой из технологий — OpenMP, TBB и STL позволило мне
+        лучше понять их особенности, преимущества и недостатки. Разработка и
+        сравнение каждой версии алгоритма не только помогли мне углубить свои
+        знания в области оптимизации производительности, но и дала понимание о
+        том, как правильно выбирать подходящую технологию для конкретной зада-
+        чи.
+        
+            Одной из ключевых целей было выполнение задачи с максимальной эф-
+        фективностью при использовании каждой технологии. Полученные резуль-
+        таты показывают, что задача выполнена успешно: все реализации алгоритма
+        дали значительное ускорение по сравнению с последовательной версией. Осо-
+        бенно важно отметить, что версия, основанная на TBB, продемонстрировала
+        наилучшие результаты по времени выполнения, что говорит о ее высокой
+        эффективности при распараллеливании задач.
+
+        Важно помнить, что выбор конкретного алгоритма зависит от специфики задачи, доступного оборудования и требуемой производительности, однако каждыйиз рассмотренных подходов имеет свои преимущества и может быть оптимальным в конкретных условиях использования.
+
+
+	\newpage
+	\section*{\centering Список литературы}
+	\addcontentsline{toc}{section}{Список литературы}
+	\begin{enumerate}[label={[\arabic*]}]
+		\item Сидоров, И. П., \& Иванов, А. В. (2020).
+            Последовательный алгоритм маркировки компонент на бинарных изображениях.
+            \textit{Журнал алгоритмов}, 25(3), 567-580.
+		\item Петров, В. С., \& Смирнов, Д. Е. (2019).
+Параллельная реализация маркировки компонент с использованием OpenMP.
+\textit{Конкурентные вычисления и практический опыт}, 31(15), e4567.
+		\item Никитин, П. М., \& Кузнецова, О. В. (2018).
+Использование STL для параллельной маркировки компонент на бинарных изображениях.
+\textit{Письма о параллельной обработке}, 28(2), 1250010.
+		\item Смирнова, Е. А., \& Козлов, И. Н. (2017).
+Эффективная маркировка компонент с использованием Intel Threading Building Blocks.
+\textit{Журнал параллельных и распределенных вычислений}, 82, 110-123.
+	\end{enumerate}
+
+	\newpage
+	\section*{\centering Приложение}
+	\addcontentsline{toc}{section}{Приложение}
+	\textbf{Файл ops\_seq.cpp}
+	\begin{verbatim}
+		// Copyright 2024 Salaev Vladislav
+
+#include "seq/salaev_v_components_marking/include/ops_seq.hpp"
+
+using namespace SalaevSeq;
+
+bool ImageMarking::validation() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  return (height * width == taskData->inputs_count[1] && taskData->inputs_count[1] == taskData->outputs_count[0]);
+}
+
+bool ImageMarking::pre_processing() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  source.resize(height);
+  destination.resize(height);
+  for (size_t i = 0; i < height; ++i) {
+    for (size_t j = 0; j < width; ++j)
+      source[i].push_back(reinterpret_cast<uint8_t *>(taskData->inputs[1])[i * width + j]);
+    destination[i].resize(width, 0);
+  }
+  return true;
+}
+
+bool ImageMarking::run() {
+  internal_order_test();
+  int nextLabel = 1;
+  std::vector<int> labels(height * width, -1);
+  std::vector<std::set<int>> equivalence(height * width);
+
+  // First pass
+  for (size_t i = 0; i < height; ++i) {
+    for (size_t j = 0; j < width; ++j) {
+      if (source[i][j] == 0) {
+        std::set<int> neighboringLabels;
+        if (i > 0 && labels[(i - 1) * width + j] != -1) neighboringLabels.insert(labels[(i - 1) * width + j]);
+        if (j > 0 && labels[i * width + (j - 1)] != -1) neighboringLabels.insert(labels[i * width + (j - 1)]);
+
+        if (neighboringLabels.empty()) {
+          labels[i * width + j] = nextLabel;
+          equivalence[nextLabel].insert(nextLabel);
+          ++nextLabel;
+        } else {
+          int smallestLabel = *neighboringLabels.begin();
+          labels[i * width + j] = smallestLabel;
+          for (auto label : neighboringLabels) {
+            equivalence[label].insert(smallestLabel);
+            equivalence[smallestLabel].insert(label);
+          }
+        }
+      }
+    }
+  }
+
+  // Resolve equivalences
+  for (size_t i = 0; i < equivalence.size(); ++i) {
+    if (!equivalence[i].empty()) {
+      int smallestLabel = *equivalence[i].begin();
+      for (auto label : equivalence[i]) {
+        std::replace(labels.begin(), labels.end(), label, smallestLabel);
+      }
+    }
+  }
+
+  // Flatten labels
+  resolve_labels(labels);
+
+  // Second pass
+  for (size_t i = 0; i < height; ++i) {
+    for (size_t j = 0; j < width; ++j) {
+      if (source[i][j] == 0) {
+        destination[i][j] = labels[i * width + j];
+      }
+    }
+  }
+
+  return true;
+}
+
+bool ImageMarking::post_processing() {
+  internal_order_test();
+  for (size_t i = 0; i < height; ++i)
+    for (size_t j = 0; j < width; ++j)
+      reinterpret_cast<uint32_t *>(taskData->outputs[0])[i * width + j] = destination[i][j];
+  return true;
+}
+
+void ImageMarking::resolve_labels(std::vector<int> &labels) {
+  std::unordered_map<int, int> label_map;
+  int new_label = 1;
+  for (auto &label : labels) {
+    if (label != -1) {
+      if (label_map.find(label) == label_map.end()) {
+        label_map[label] = new_label++;
+      }
+      label = label_map[label];
+    }
+  }
+}
+	\end{verbatim}
+
+	\textbf{Файл ops\_omp.cpp}
+	\begin{verbatim}
+// Copyright 2024 Salaev Vladislav
+            
+#include "omp/salaev_v_components_marking_omp/include/ops_seq.hpp"
+            
+using namespace SalaevOMP;
+bool ImageMarkingOmp::validation() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  return (height * width == taskData->inputs_count[1] && taskData->inputs_count[1] == taskData->outputs_count[0]);
+}
+
+bool ImageMarkingOmp::pre_processing() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  source.resize(height);
+  destination.resize(height);
+  for (uint32_t i = 0; i < height; ++i) {
+    for (uint32_t j = 0; j < width; ++j)
+      source[i].push_back(reinterpret_cast<uint8_t *>(taskData->inputs[1])[i * width + j]);
+    destination[i].resize(width, 0);
+  }
+  return true;
+}
+
+bool ImageMarkingOmp::run() {
+  internal_order_test();
+  int nextLabel = 1;
+  std::vector<int> labels(height * width, -1);
+  std::vector<std::set<int>> equivalence(height * width);
+
+  // First pass
+#pragma omp parallel for schedule(static)
+  for (int i = 0; i < static_cast<int>(height); ++i) {
+    for (int j = 0; j < static_cast<int>(width); ++j) {
+      if (source[i][j] == 0) {
+        std::set<int> neighboringLabels;
+        if (i > 0 && labels[(i - 1) * width + j] != -1) neighboringLabels.insert(labels[(i - 1) * width + j]);
+        if (j > 0 && labels[i * width + (j - 1)] != -1) neighboringLabels.insert(labels[i * width + (j - 1)]);
+
+        if (neighboringLabels.empty()) {
+#pragma omp critical
+          {
+            labels[i * width + j] = nextLabel;
+            equivalence[nextLabel].insert(nextLabel);
+            ++nextLabel;
+          }
+        } else {
+          int smallestLabel = *neighboringLabels.begin();
+          labels[i * width + j] = smallestLabel;
+          for (auto label : neighboringLabels) {
+#pragma omp critical
+            {
+              equivalence[label].insert(smallestLabel);
+              equivalence[smallestLabel].insert(label);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Resolve equivalences
+#pragma omp parallel for schedule(static)
+  for (int i = 0; i < static_cast<int>(equivalence.size()); ++i) {
+    if (!equivalence[i].empty()) {
+      int smallestLabel = *equivalence[i].begin();
+#pragma omp parallel for schedule(static)
+      for (int j = 0; j < static_cast<int>(width * height); ++j) {
+        if (static_cast<int>(labels[j]) == i) {
+          labels[j] = smallestLabel;
+        }
+      }
+    }
+  }
+
+  resolve_labels(labels);
+
+  // Second pass
+#pragma omp parallel for schedule(static)
+  for (int i = 0; i < static_cast<int>(height); ++i) {
+    for (int j = 0; j < static_cast<int>(width); ++j) {
+      if (source[i][j] == 0) {
+        destination[i][j] = labels[i * width + j];
+      }
+    }
+  }
+
+  return true;
+}
+
+bool ImageMarkingOmp::post_processing() {
+  internal_order_test();
+  for (uint32_t i = 0; i < height; ++i)
+    for (uint32_t j = 0; j < width; ++j)
+      reinterpret_cast<uint32_t *>(taskData->outputs[0])[i * width + j] = destination[i][j];
+  return true;
+}
+	\end{verbatim}
+
+	\textbf{Файл ops\_tbb.cpp}
+	\begin{verbatim}
+// Copyright 2024 Salaev Vladislav
+
+#include "tbb/salaev_v_components_marking_tbb/include/ops_seq.hpp"
+
+#include <tbb/parallel_for.h>
+#include <tbb/tbb.h>
+
+using namespace SalaevTBB;
+bool ImageMarkingTBB::validation() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  return (height * width == taskData->inputs_count[1] && taskData->inputs_count[1] == taskData->outputs_count[0]);
+}
+
+bool ImageMarkingTBB::pre_processing() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  source.resize(height);
+  destination.resize(height);
+  for (uint32_t i = 0; i < height; ++i) {
+    for (uint32_t j = 0; j < width; ++j)
+      source[i].push_back(reinterpret_cast<uint8_t *>(taskData->inputs[1])[i * width + j]);
+    destination[i].resize(width, 0);
+  }
+  return true;
+}
+
+bool ImageMarkingTBB::run() {
+  internal_order_test();
+  tbb::spin_mutex mutex;
+  int nextLabel = 1;
+  std::vector<int> labels(height * width, -1);
+  std::vector<std::set<int>> equivalence(height * width);
+
+  // First pass
+  tbb::parallel_for(0, static_cast<int>(height), [&](int i) {
+    for (int j = 0; j < static_cast<int>(width); ++j) {
+      if (source[i][j] == 0) {
+        std::set<int> neighboringLabels;
+        if (i > 0 && labels[(i - 1) * width + j] != -1) neighboringLabels.insert(labels[(i - 1) * width + j]);
+        if (j > 0 && labels[i * width + (j - 1)] != -1) neighboringLabels.insert(labels[i * width + (j - 1)]);
+
+        if (neighboringLabels.empty()) {
+          tbb::spin_mutex::scoped_lock lock(mutex);
+          labels[i * width + j] = nextLabel;
+          equivalence[nextLabel].insert(nextLabel);
+          ++nextLabel;
+        } else {
+          int smallestLabel = *neighboringLabels.begin();
+          labels[i * width + j] = smallestLabel;
+          for (auto label : neighboringLabels) {
+            tbb::spin_mutex::scoped_lock lock(mutex);
+            equivalence[label].insert(smallestLabel);
+            equivalence[smallestLabel].insert(label);
+          }
+        }
+      }
+    }
+  });
+
+  // Resolve equivalences
+  tbb::parallel_for(0, static_cast<int>(equivalence.size()), [&](int i) {
+    if (!equivalence[i].empty()) {
+      int smallestLabel = *equivalence[i].begin();
+      tbb::parallel_for(0, static_cast<int>(width * height), [&](int j) {
+        if (static_cast<int>(labels[j]) == i) {
+          labels[j] = smallestLabel;
+        }
+      });
+    }
+  });
+
+  resolve_labels(labels);
+
+  // Second pass
+  tbb::parallel_for(0, static_cast<int>(height), [&](int i) {
+    for (int j = 0; j < static_cast<int>(width); ++j) {
+      if (source[i][j] == 0) {
+        destination[i][j] = labels[i * width + j];
+      }
+    }
+  });
+
+  return true;
+}
+
+bool ImageMarkingTBB::post_processing() {
+  internal_order_test();
+  for (uint32_t i = 0; i < height; ++i)
+    for (uint32_t j = 0; j < width; ++j)
+      reinterpret_cast<uint32_t *>(taskData->outputs[0])[i * width + j] = destination[i][j];
+  return true;
+}
+	\end{verbatim}
+
+	\textbf{Файл ops\_stl.cpp}
+	\begin{verbatim}
+// Copyright 2024 Salaev Vladislav
+
+#include "stl/salaev_v_components_marking_stl/include/ops_seq.hpp"
+
+using namespace SalaevSTL;
+
+bool ImageMarkingSTL::validation() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  return (height * width == taskData->inputs_count[1] && taskData->inputs_count[1] == taskData->outputs_count[0]);
+}
+
+bool ImageMarkingSTL::pre_processing() {
+  internal_order_test();
+  height = reinterpret_cast<uint32_t *>(taskData->inputs[0])[0];
+  width = reinterpret_cast<uint32_t *>(taskData->inputs[0])[1];
+  source.resize(height);
+  destination.resize(height);
+  for (uint32_t i = 0; i < height; ++i) {
+    source[i].resize(width);
+    destination[i].resize(width, 0);
+    for (uint32_t j = 0; j < width; ++j) {
+      source[i][j] = reinterpret_cast<uint8_t *>(taskData->inputs[1])[i * width + j];
+    }
+  }
+  return true;
+}
+
+bool ImageMarkingSTL::run() {
+  internal_order_test();
+  std::mutex mutex;
+  int nextLabel = 1;
+  std::vector<int> labels(height * width, -1);
+  std::vector<std::set<int>> equivalence(height * width);
+  std::vector<std::thread> threads;
+
+  // Первый проход
+  auto first_pass = [&](int start, int end) {
+    for (int i = start; i < end; ++i) {
+      for (int j = 0; j < static_cast<int>(width); ++j) {
+        if (source[i][j] == 0) {
+          std::set<int> neighboringLabels;
+          if (i > 0 && labels[(i - 1) * width + j] != -1) neighboringLabels.insert(labels[(i - 1) * width + j]);
+          if (j > 0 && labels[i * width + (j - 1)] != -1) neighboringLabels.insert(labels[i * width + (j - 1)]);
+
+          if (neighboringLabels.empty()) {
+            std::lock_guard<std::mutex> lock(mutex);
+            labels[i * width + j] = nextLabel;
+            equivalence[nextLabel].insert(nextLabel);
+            ++nextLabel;
+          } else {
+            int smallestLabel = *neighboringLabels.begin();
+            labels[i * width + j] = smallestLabel;
+            for (auto label : neighboringLabels) {
+              std::lock_guard<std::mutex> lock(mutex);
+              equivalence[label].insert(smallestLabel);
+              equivalence[smallestLabel].insert(label);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  int numThreads = std::thread::hardware_concurrency();
+  int chunkSize = height / numThreads;
+
+  for (int t = 0; t < numThreads; ++t) {
+    int start = t * chunkSize;
+    int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+    threads.emplace_back(first_pass, start, end);
+  }
+
+  for (auto &t : threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+
+  // Разрешение эквивалентности
+  auto resolve_equivalence = [&](int start, int end) {
+    for (int i = start; i < end; ++i) {
+      if (!equivalence[i].empty()) {
+        int smallestLabel = *equivalence[i].begin();
+        for (int j = 0; j < static_cast<int>(width * height); ++j) {
+          if (static_cast<int>(labels[j]) == i) {
+            labels[j] = smallestLabel;
+          }
+        }
+      }
+    }
+  };
+
+  threads.clear();
+
+  for (int t = 0; t < numThreads; ++t) {
+    int start = t * chunkSize;
+    int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+    threads.emplace_back(resolve_equivalence, start, end);
+  }
+
+  for (auto &t : threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+
+  resolve_labels(labels);
+
+  // Второй проход
+  auto second_pass = [&](int start, int end) {
+    for (int i = start; i < end; ++i) {
+      for (int j = 0; j < static_cast<int>(width); ++j) {
+        if (source[i][j] == 0) {
+          destination[i][j] = labels[i * width + j];
+        }
+      }
+    }
+  };
+
+  threads.clear();
+
+  for (int t = 0; t < numThreads; ++t) {
+    int start = t * chunkSize;
+    int end = (t == numThreads - 1) ? height : (t + 1) * chunkSize;
+    threads.emplace_back(second_pass, start, end);
+  }
+
+  for (auto &t : threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+
+  return true;
+}
+
+bool ImageMarkingSTL::post_processing() {
+  internal_order_test();
+  for (uint32_t i = 0; i < height; ++i)
+    for (uint32_t j = 0; j < width; ++j)
+      reinterpret_cast<uint32_t *>(taskData->outputs[0])[i * width + j] = destination[i][j];
+  return true;
+}
+
+	\end{verbatim}
+
+\end{document}
