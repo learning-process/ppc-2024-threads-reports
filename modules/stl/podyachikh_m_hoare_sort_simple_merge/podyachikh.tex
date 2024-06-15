@@ -1,0 +1,631 @@
+\documentclass{report}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+\usepackage{hyperref}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#},
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,
+}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет имени Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\Large Отчет по лабораторной работе \\
+\vspace{0.5em}
+<<Сортировка Хоара с простым слиянием>>} \\
+\end{center}
+
+\vspace{4em}
+
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР1\\
+Подъячих М. В.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+\tableofcontents
+\newpage
+
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В данной лабораторной работе рассматривается сортировка Хоара (Quicksort) с простым слиянием, а также её параллельные реализации с использованием технологий OpenMP, TBB и STL threads. Целью является сравнение производительности различных реализаций на многопоточных системах.
+
+\newpage
+
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{Цели и задачи:}
+\begin{enumerate}
+    \item Реализовать алгоритм сортировки Хоара (Quicksort) с простым слиянием.
+    \item Реализовать параллельные версии алгоритма с использованием OpenMP, TBB и STL threads.
+    \item Провести сравнительный анализ производительности различных реализаций.
+\end{enumerate}
+
+\newpage
+
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Сортировка Хоара, или Quicksort, является одним из наиболее эффективных алгоритмов сортировки. Основная идея заключается в выборе опорного элемента (pivot) и разделении массива на две части: элементы меньше и больше опорного. Затем рекурсивно сортируются обе части.
+
+\par Пример псевдокода:
+\begin{lstlisting}
+algorithm quicksort(A, lo, hi) is
+   if lo < hi then
+       p:= partition(A, lo, hi)
+       quicksort(A, lo, p)
+       quicksort(A, p + 1, hi)
+algorithm partition(A, low, high) is
+   pivot:= A[(low + high) / 2]
+   i:= low
+   j:= high
+   loop forever
+       while A[i] < pivot 
+              i:= i + 1
+       while A[j] > pivot
+              j:= j - 1
+       if i >= j then
+           return j
+       swap A[i++] with A[j--]
+\end{lstlisting}
+
+\newpage
+
+\section*{Описание параллельных версий}
+\addcontentsline{toc}{section}{Описание параллельных версий}
+\par Для распараллеливания алгоритма сортировки Хоара были использованы следующие технологии: OpenMP, TBB и STL threads. Основная идея заключалась в распараллеливании рекурсивных вызовов для сортировки частей массива.
+
+\par Однако распараллеливание каждого вызова функции сортировки на подотрезке приводило к увеличению времени исполнения, так как создвалось много добалнительных потоков на маленькие подотрезки массива. Было выбрано ограничить применение параллелизма параметром max\_segment\_length. Который лучше всего себя показывает на значениях около \(\frac{n}{N}\), где \(n\) - размер сортируемого массива, а \(N\) - количесво доступных процессоров.
+
+\par \textbf{Версия с OpenMP:}
+\par Используется набор директив, позволяющих параллельно выполнять сортировку в каждом блоке:
+\begin{enumerate}
+    \item \#pragma omp parallel sections
+    \item \#pragma omp section 
+\end{enumerate}
+\begin{lstlisting}
+#pragma omp parallel sections
+{
+    #pragma omp section
+    {
+        omp_hoare_sort(left, j);
+    }
+    #pragma omp section
+    {
+        omp_hoare_sort(j + 1, right);
+    }
+}
+\end{lstlisting}
+
+\par \textbf{Версия с TBB:}
+\par Используется функция tbb::parallel\_invoke(), которая выполняет переданные функции параллельно:
+\begin{lstlisting}
+tbb::parallel_invoke(
+    [&] { tbb_hoare_sort(left, j); }, 
+    [&] { tbb_hoare_sort(j + 1, right); }
+);
+\end{lstlisting}
+
+\par \textbf{Версия с STL threads:}
+\par Используются потоки из стандартной библиотеки C++:
+\begin{enumerate}
+    \item \texttt{std::thread} - для создания потоков
+    \item \texttt{std::thread::join} - для ожидания завершения выполнения потоков
+\end{enumerate}
+\begin{lstlisting}
+std::thread t1([&]{ stl_hoare_sort(left, j); });
+std::thread t2([&]{ stl_hoare_sort(j + 1, right); });
+t1.join();
+t2.join();
+\end{lstlisting}
+
+\newpage
+
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Для проведения экспериментов использовалась система со следующими характеристиками:
+\begin{itemize}
+    \item Процессор: Intel Core i5-12400, 12 ядер
+    \item Оперативная память: 32 ГБ
+    \item Операционная система: Windows 10
+\end{itemize}
+
+\par \textbf{Данные:}
+\par Для тестирования использовался случайно сгенерированный массив размером \(2000000\) элементов. Каждый элемент массива являлся случайным целым числом в диапазоне от \(-1e9\) до \(1e9\). Время исполнения усреднено по 10 последовательным запускам
+\par 
+
+\par \textbf{Результаты:}
+\begin{center}
+\begin{tabular}{ |c|c|c|c| }
+    \hline
+    Версия алгоритма & Время выполнения (мс) & Ускорение & Эффективность \\ 
+    \hline
+    Последовательная & 856 & 1.0 & 0.083 \\ 
+    \hline
+    OpenMP & 301 & 2.84 & 0.237 \\ 
+    \hline
+    TBB & 279 & 3.07 & 0.256 \\ 
+    \hline
+    STL threads & 263 & 3.25 & 0.271 \\ 
+    \hline
+\end{tabular}
+\end{center}
+
+\par \textbf{Вычисление прироста скорости:}
+\par Прирост скорости для каждой параллельной версии вычислялся как отношение времени выполнения последовательной версии к времени выполнения параллельной версии:
+\[ \text{Ускорение} = \frac{T_{\text{посл.}}}{T_{\text{пар.}}} \]
+\par Эффективность для каждой параллельной версии вычислялся как отношение ускорения параллельной версии к количеству используемых процессоров:
+\[ \text{Эффективность} = \frac{{\text{Ускорение}}}{{\text{Число процессоров}}} \]
+
+\newpage
+
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В ходе лабораторной работы были реализованы последовательная и параллельные версии алгоритма сортировки Хоара. Проведенный анализ показал, что параллельные версии значительно превосходят последовательную по производительности, особенно версии с использованием OpenMP и TBB. На тестовом наборе данных размером 2000000 элементов параллельные версии обеспечили ускорение более чем в два раза. Увеличение скорости с ростом числа процессоров показывает эффективность распараллеливания, однако прирост становится менее значительным при увеличении числа ядер из-за дополнительных накладных расходов.
+
+\newpage
+
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Кнут Д.Э. Искусство программирования. Том 3. Сортировка и поиск. М.: Вильямс, 2002. — 830 с.
+    \item OpenMP API Specification for Parallel Programming: \url{https://www.openmp.org}
+    \item Intel Threading Building Blocks: \url{https://www.threadingbuildingblocks.org}
+    \item C++ Standard Library: \url{https://en.cppreference.com/w/cpp/thread}
+\end{enumerate}
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}{Последовательная версия}
+// Copyright 2024 Podyachikh Mikhail
+
+#include "seq/podyachikh_m_hoare_sort_simple_merge/include/hoare_sort.hpp"
+
+#include <cassert>
+
+using namespace std::chrono_literals;
+using namespace Podyachikh;
+
+bool HoareSort::pre_processing() {
+  internal_order_test();
+  try {
+    // Init value for input and output
+    _data = reinterpret_cast<vec_t *>(taskData->inputs[0])[0];
+    if (taskData->inputs.size() == 2) {
+      _comp = reinterpret_cast<compare_t *>(taskData->inputs[1])[0];
+    } else {
+      _comp = std::less<>();
+    }
+  } catch (...) {
+    std::cout << "Failed pre_processing\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::validation() {
+  internal_order_test();
+  // Check count elements of output
+  if (taskData->inputs.empty()) return false;
+  if (taskData->inputs.size() > 2) return false;
+  return taskData->outputs.size() == 1;
+}
+
+bool HoareSort::run() {
+  internal_order_test();
+  try {
+    seq_hoare_sort(0, _data.size() - 1);
+  } catch (...) {
+    std::cout << "Run failure\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::post_processing() {
+  internal_order_test();
+  auto &res = reinterpret_cast<vec_t *>(taskData->outputs[0])[0];
+  for (size_t i = 0; i < _data.size(); i++) {
+    res[i] = _data[i];
+  }
+  return true;
+}
+
+int HoareSort::partition(int left, int right) {
+  int pivot = _data[(left + right) / 2];
+  left--;
+  right++;
+  while (true) {
+    while (_comp(_data[++left], pivot))
+      ;
+    while (_comp(pivot, _data[--right]))
+      ;
+    if (left >= right) {
+      return right;
+    }
+    std::swap(_data[left], _data[right]);
+  }
+}
+
+void HoareSort::seq_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  int mid = partition(left, right);
+  seq_hoare_sort(left, mid);
+  seq_hoare_sort(mid + 1, right);
+}
+\end{lstlisting}
+\newpage
+
+\begin{lstlisting}{OpenMP версия}
+// Copyright 2024 Podyachikh Mikhail
+
+#include "omp/podyachikh_m_hoare_sort_simple_merge/include/hoare_sort.hpp"
+
+#include "omp.h"
+
+using namespace std::chrono_literals;
+using namespace PodyachikhOMP;
+
+bool HoareSort::pre_processing() {
+  internal_order_test();
+  try {
+    // Init value for input and output
+    _data = reinterpret_cast<vec_t *>(taskData->inputs[0])[0];
+    if (taskData->inputs.size() == 2) {
+      _comp = reinterpret_cast<compare_t *>(taskData->inputs[1])[0];
+    } else {
+      _comp = std::less<>();
+    }
+  } catch (...) {
+    std::cout << "Failed pre_processing\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::validation() {
+  internal_order_test();
+  // Check count elements of output
+  if (taskData->inputs.empty()) return false;
+  if (taskData->inputs.size() > 2) return false;
+  return taskData->outputs.size() == 1;
+}
+
+bool HoareSort::run() {
+  internal_order_test();
+  omp_set_num_threads(4);
+  max_segment_length = _data.size() / omp_get_max_threads();
+  try {
+    omp_hoare_sort(0, _data.size() - 1);
+  } catch (...) {
+    std::cout << "Run failure\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::post_processing() {
+  internal_order_test();
+  auto &res = reinterpret_cast<vec_t *>(taskData->outputs[0])[0];
+  for (size_t i = 0; i < _data.size(); i++) {
+    res[i] = _data[i];
+  }
+  return true;
+}
+
+void HoareSort::seq_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+  seq_hoare_sort(left, j);
+  seq_hoare_sort(j + 1, right);
+}
+
+void HoareSort::omp_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  if (right - left < max_segment_length) {
+    return seq_hoare_sort(left, right);
+  }
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+
+#pragma omp parallel sections default(shared)
+  {
+#pragma omp section
+    { omp_hoare_sort(left, j); }
+#pragma omp section
+    { omp_hoare_sort(j + 1, right); }
+  }
+}
+\end{lstlisting}
+\newpage
+
+\begin{lstlisting}{TBB версия}
+// Copyright 2024 Podyachikh Mikhail
+
+#include "tbb/podyachikh_m_hoare_sort_simple_merge/include/hoare_sort.hpp"
+
+#include <oneapi/tbb.h>
+
+using namespace std::chrono_literals;
+using namespace PodyachikhTBB;
+
+bool HoareSort::pre_processing() {
+  internal_order_test();
+  try {
+    // Init value for input and output
+    _data = reinterpret_cast<vec_t *>(taskData->inputs[0])[0];
+    if (taskData->inputs.size() == 2) {
+      _comp = reinterpret_cast<compare_t *>(taskData->inputs[1])[0];
+    } else {
+      _comp = std::less<>();
+    }
+  } catch (...) {
+    std::cout << "Failed pre_processing\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::validation() {
+  internal_order_test();
+  // Check count elements of output
+  if (taskData->inputs.empty()) return false;
+  if (taskData->inputs.size() > 2) return false;
+  return taskData->outputs.size() == 1;
+}
+
+bool HoareSort::run() {
+  internal_order_test();
+  max_segment_length = _data.size() / 12;
+  try {
+    tbb_hoare_sort(0, _data.size() - 1);
+  } catch (...) {
+    std::cout << "Run failure\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::post_processing() {
+  internal_order_test();
+  auto &res = reinterpret_cast<vec_t *>(taskData->outputs[0])[0];
+  for (size_t i = 0; i < _data.size(); i++) {
+    res[i] = _data[i];
+  }
+  return true;
+}
+
+void HoareSort::seq_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+  seq_hoare_sort(left, j);
+  seq_hoare_sort(j + 1, right);
+}
+
+void HoareSort::tbb_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  if (right - left < max_segment_length) {
+    return seq_hoare_sort(left, right);
+  }
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+  tbb::parallel_invoke([&] { tbb_hoare_sort(left, i); }, [&] { tbb_hoare_sort(j + 1, right); });
+}
+\end{lstlisting}
+\newpage
+
+\begin{lstlisting}{STL threads версия}
+// Copyright 2024 Podyachikh Mikhail
+
+#include "stl/podyachikh_m_hoare_sort_simple_merge/include/hoare_sort.hpp"
+
+using namespace std::chrono_literals;
+using namespace PodyachikhSTL;
+
+bool HoareSort::pre_processing() {
+  internal_order_test();
+  try {
+    // Init value for input and output
+    _data = reinterpret_cast<vec_t *>(taskData->inputs[0])[0];
+    if (taskData->inputs.size() == 2) {
+      _comp = reinterpret_cast<compare_t *>(taskData->inputs[1])[0];
+    } else {
+      _comp = std::less<>();
+    }
+  } catch (...) {
+    std::cout << "Failed pre_processing\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::validation() {
+  internal_order_test();
+  // Check count elements of output
+  if (taskData->inputs.empty()) return false;
+  if (taskData->inputs.size() > 2) return false;
+  return taskData->outputs.size() == 1;
+}
+
+bool HoareSort::run() {
+  internal_order_test();
+  max_segment_length = _data.size() / 4;
+  try {
+    stl_hoare_sort(0, _data.size() - 1);
+  } catch (...) {
+    std::cout << "Run failure\n" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool HoareSort::post_processing() {
+  internal_order_test();
+  auto &res = reinterpret_cast<vec_t *>(taskData->outputs[0])[0];
+  for (size_t i = 0; i < _data.size(); i++) {
+    res[i] = _data[i];
+  }
+  return true;
+}
+
+void HoareSort::seq_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+  seq_hoare_sort(left, j);
+  seq_hoare_sort(j + 1, right);
+}
+
+void HoareSort::stl_hoare_sort(int left, int right) {
+  if (left >= right) return;
+  if (right - left < max_segment_length) {
+    return seq_hoare_sort(left, right);
+  }
+  int pivot = _data[(left + right) / 2];
+  int i = left - 1;
+  int j = right + 1;
+  while (true) {
+    do {
+      i++;
+    } while (_comp(_data[i], pivot));
+    do {
+      j--;
+    } while (_comp(pivot, _data[j]));
+    if (i >= j) {
+      break;
+    }
+    std::swap(_data[i], _data[j]);
+  }
+
+  std::thread lp_thread(&HoareSort::stl_hoare_sort, this, left, j);
+  std::thread rp_thread(&HoareSort::stl_hoare_sort, this, j + 1, right);
+
+  lp_thread.join();
+  rp_thread.join();
+}
+\end{lstlisting}
+
+\end{document}
