@@ -34,6 +34,7 @@ jobs:
     - name: Setup environment
       run: |
         choco install miktex.install
+        pip3 install Pygments
       shell: pwsh
     - name: Build
       run: |
@@ -55,6 +56,7 @@ jobs:
         submodules: true
     - name: Setup environment
       run: |
+        brew install Pygments
         brew install --cask mactex
         brew install ninja
     - name: Build
