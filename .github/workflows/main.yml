@@ -56,10 +56,9 @@ jobs:
         submodules: true
     - name: Setup environment
       run: |
+        brew install Pygments
         brew install --cask mactex
         brew install ninja
-        brew install pip3
-        pip3 install Pygments
     - name: Build
       run: |
         eval "$(/usr/libexec/path_helper)"
