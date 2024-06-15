@@ -1,0 +1,426 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Линейная фильтрация изображений (вертикальное разбиение). Ядро Гаусса 3x3>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР2\\Кочетов Н. А.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В эпоху стремительного развития технологий обработки цифровых изображений одной из ключевых задач является эффективное применение параллельных вычислений для повышения производительности алгоритмов. Линейная фильтрация, в частности с использованием ядра Гаусса размера 3x3, является распространенным методом улучшения качества изображений, устранения шумов и выделения важных деталей. Однако при обработке крупных изображений данный процесс может быть весьма ресурсоемким и требовать значительных вычислительных мощностей.
+
+\par Целью настоящей работы является разработка и анализ эффективности параллельного алгоритма линейной фильтрации изображений с применением ядра Гаусса 3x3 и вертикального разбиения изображения на системах с общей памятью. Вертикальное разбиение позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может существенно ускорить процесс фильтрации и повысить производительность.
+
+\par В рамках данной работы будут рассмотрены теоретические основы линейной фильтрации изображений, описан параллельный алгоритм фильтрации с использованием ядра Гаусса и вертикального разбиения, а также проведены эксперименты по оценке эффективности и ускорения предложенного алгоритма на различных наборах данных и конфигурациях системы. Результаты исследования могут быть полезны для разработчиков программного обеспечения в области обработки изображений и компьютерного зрения, а также для исследователей, занимающихся параллельными вычислениями и оптимизацией алгоритмов.
+
+\par В рамках задачи реализован алгоритм с использованием технологий: SEQ, TBB, STD.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+\item Реализовать три версии алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и вертикального разбиения:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+\item Сравнить реализации и производительность версий.
+\item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Линейная фильтрация изображений с использованием ядра Гаусса 3x3 является широко применяемым методом для сглаживания изображений и удаления высокочастотных шумов. Данный алгоритм заключается в вычислении взвешенного среднего значения пикселей в окрестности каждого пикселя исходного изображения.
+
+\par \textbf{Алгоритм линейной фильтрации с использованием ядра Гаусса 3x3 и вертикального разбиения:}
+
+\begin{enumerate}
+\item Разделить исходное изображение на вертикальные полосы.
+\item Для каждой полосы выполнить следующие действия:
+\begin{enumerate}
+\item Применить ядро Гаусса 3x3 к каждому пикселю полосы, вычисляя взвешенное среднее значение соседних пикселей.
+\item Обработать граничные пиксели, используя соответствующие значения из соседних полос.
+\end{enumerate}
+\item Объединить обработанные полосы в результирующее изображение.
+\end{enumerate}
+
+\par Вертикальное разбиение изображения позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс фильтрации и повысить производительность.
+
+\par В рамках данной работы будут реализованы три версии алгоритма линейной фильтрации с использованием ядра Гаусса 3x3 и вертикального разбиения:
+\begin{itemize}
+\item Последовательная реализация (SEQ)
+\item Параллельная реализация с использованием технологии TBB
+\item Параллельная реализация с использованием стандартной библиотеки C++
+\end{itemize}
+Будет проведено сравнение реализаций и анализ производительности каждой версии.
+
+\newpage
+
+% Описание схемы распараллеливания
+\section* {Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм линейной фильтрации изображений с использованием ядра Гаусса 3x3 и вертикального разбиения состоит из следующих основных этапов, которые были распараллелены:}
+\begin{enumerate}
+\item Копирование входных данных в изображение
+\item Применение ядра Гаусса 3x3 к каждому пикселю изображения
+\item Копирование обработанного изображения в выходные данные
+\end{enumerate}
+\vspace{2em}
+\par \textbf{На втором этапе (применение ядра Гаусса 3x3) было распараллелено:}
+\begin{enumerate}
+\item Вычисление новых значений цветовых компонент каждого пикселя с использованием ядра Гаусса 3x3
+\item Ограничение значений цветовых компонент до допустимого диапазона
+\end{enumerate}
+\vspace{1em}
+\par Вертикальное разбиение изображения позволяет распределить вычислительную нагрузку между несколькими потоками или процессами, что может значительно ускорить процесс фильтрации и повысить производительность.
+
+\newpage
+
+\section* {Описание SEQ, OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения, основные участки кода, подлежащие распараллеливанию, остаются неизменными. Однако ключевое различие между версиями, такими как SEQ (последовательная версия), OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), заключается в предоставляемых ими возможностях и методах распараллеливания.
+
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+\item В SEQ версии выполняется последовательное применение ядра Гаусса 3x3 к каждому пикселю изображения, без использования параллельных вычислений.
+
+\item В TBB используется tbb::parallel\_for, что позволяет распараллелить вычисления новых значений цветовых компонент для каждого пикселя изображения, разбивая задачу на блоки и распределяя их между потоками.
+
+\item В STL для параллельного выполнения используются объекты std::thread, которые создают потоки, обрабатывающие различные части изображения. Также используются методы std::thread::join для ожидания завершения выполнения всех потоков.
+\end{enumerate}
+
+\par Во всех версиях основными распараллеливаемыми участками кода являются:
+\begin{enumerate}
+\item Вычисление новых значений цветовых компонент для каждого пикселя изображения с использованием ядра Гаусса 3x3.
+\item Ограничение значений цветовых компонент до допустимого диапазона.
+\end{enumerate}
+
+\par Различия между версиями заключаются в используемых средствах параллельного программирования и способах распределения вычислительной нагрузки между потоками.
+
+\newpage
+
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и горизонтального разбиения была проверена путем сравнения результатов фильтрации с эталонными изображениями.
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалась система со следующей конфигурацией:
+\begin{itemize}
+\item Процессор: AMD Ryzen 5 7600X, 6 ядер / 12 потоков
+\item Оперативная память: 32 ГБ
+\item Операционная система: Windows 10
+\end{itemize}
+\par Количество потоков для параллельных версий алгоритма было ограничено до 4.
+\par В таблице приведены средние значения времени обработки изображения размером 1000x1000 пикселей за 10 запусков.
+
+\par \textbf{Результаты экспериментов:}
+\begin{center}
+\begin{tabular}{ ||c | c | c || }
+\hline Версия алгоритма & pipeline (сек) & task (сек)\\
+\hline Последовательная & 2.1739988000 & 2.1785272000 \\
+\hline TBB & 1.1405654000 & 1.0877458000 \\
+\hline STL & 1.1593404000 & 1.1392744000 \\
+\hline
+\end{tabular}\\[3mm]
+\end{center}
+
+\newpage
+
+% Выводы из результатов
+\section*{Выводы из результатов}
+\addcontentsline{toc}{section}{Выводы из результатов}
+\par Для оценки эффективности параллельных алгоритмов линейной фильтрации изображений с использованием ядра Гаусса 3x3, были рассчитаны коэффициенты ускорения и эффективности. Расчеты основаны на среднем времени выполнения алгоритмов для изображения размером 1000х1000 пикселей.
+
+\par Коэффициент ускорения \( p_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ p_i = \frac{T_{si}}{T_{pi}} $$
+где \( T_{si} \) - время выполнения последовательного алгоритма, а \( T_{pi} \) - время выполнения параллельного алгоритма для \( i \)-й версии.
+
+\par Эффективность \( e_i \) для каждой версии алгоритма рассчитывается по формуле:
+$$ e_i = \frac{p_i}{N} $$
+где \( N \) - количество потоков (в данном случае 4).
+
+\par Используя данные из предыдущей таблицы, получаем следующие результаты для двух различных типов задач: pipeline и task.
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ TBB & \( \frac{2.1739988000}{1.1405654000} \approx 1,906 \) & \( \frac{1.96}{4} \approx 0.476 \) \\
+ STL & \( \frac{2.1739988000}{1.1593404000} \approx 1,875 \) & \( \frac{1.89}{4} \approx 0.469 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+ Последовательная & 1 & 0.25 \\
+ TBB & \( \frac{2.1785272000}{1.0877458000} \approx 2,003 \) & \( \frac{1.97}{4} \approx 0.5 \) \\
+ STL & \( \frac{2.1785272000}{1.1392744000} \approx 1,912 \) & \( \frac{1.89}{4} \approx 0.478 \) \\
+ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Выводы}:
+\begin{itemize}
+    \item В обоих типах задач (pipeline и task) наилучшее ускорение и эффективность показала версия TBB.
+    \item Наименьшее ускорение и эффективность демонстрирует STL версия.
+    \item Распараллеливание алгоритма привело к ускорению его выполнения примерно в два раза по сравнению с последовательной версией.
+\end{itemize}
+
+\newpage
+
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+\par В рамках данной работы были рассмотрены теоретические основы и реализованы три версии алгоритма линейной фильтрации изображений с использованием ядра Гаусса 3x3 и вертикального разбиения: последовательная реализация, параллельная реализация с использованием технологии TBB и параллельная реализация с использованием стандартной библиотеки C++. Проведено сравнение реализаций и анализ производительности каждой версии.
+\par Вертикальное разбиение изображения позволило существенно ускорить процесс фильтрации и повысить производительность, что подтверждается экспериментальными данными. Данная методика может быть полезна для разработчиков программного обеспечения в области обработки изображений и компьютерного зрения, а также для исследователей, занимающихся параллельными вычислениями и оптимизацией алгоритмов.
+
+% Литература
+\newpage
+\begin{thebibliography}{1}
+\addcontentsline{toc}{section}{Литература}
+\bibitem{TBB} Intel Threading Building Blocks. URL: \url{https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/threading-building-blocks.html}
+\bibitem{C++ Standard Library} C++ Standard Library. URL: \url{https://en.cppreference.com/w/cpp/standard_library}
+\item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью".
+\end{thebibliography}
+
+\newpage
+
+% Код программы
+\section*{Код программы}
+\addcontentsline{toc}{section}{Код программы}
+\par Реализация алгоритма на языке программирования C++ представлена ниже.
+
+\begin{lstlisting}
+// Copyright 2024 Kochetov Nikolay
+#include "seq/kochetov_n_gauss_filter/include/gauss_filter.hpp"
+
+#include <gtest/gtest.h>
+
+#include <random>
+#include <vector>
+
+int* GaussFilter::getImgId(int a, int b) { return &input[a * x + b]; }
+
+int* GaussFilter::getResId(int a, int b) { return &result[a * x + b]; }
+
+int GaussFilter::clampData(int value, int min, int max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
+
+bool GaussFilter::pre_processing() {
+  internal_order_test();
+
+  x = taskData->inputs_count[0];
+  y = taskData->inputs_count[1];
+
+  input = reinterpret_cast<int*>(taskData->inputs[0]);
+  result = reinterpret_cast<int*>(taskData->outputs[0]);
+
+  return true;
+}
+
+bool GaussFilter::run() {
+  internal_order_test();
+
+  for (int i = 1; i < x - 1; ++i) {
+    for (int j = 1; j < y - 1; ++j) {
+      int sum = 0;
+      for (int ki = -1; ki <= 1; ++ki) {
+        for (int kj = -1; kj <= 1; ++kj) {
+          sum += *getImgId(ki + i, kj + j) * kernel[ki + 1][kj + 1];
+        }
+      }
+      *getResId(i, j) = (int)(sum / 16);
+    }
+  }
+  return true;
+}
+
+bool GaussFilter::post_processing() {
+  internal_order_test();
+
+  for (int i = 0; i < x; ++i) {
+    for (int j = 0; j < y; ++j) {
+      *getResId(i, j) = clampData(*getResId(i, j), 0, 255);
+    }
+  }
+  return true;
+}
+
+bool GaussFilter::validation() {
+  internal_order_test();
+
+  return !taskData->inputs.empty() && !taskData->outputs.empty() && !taskData->inputs_count.empty() &&
+         !taskData->outputs_count.empty() && taskData->inputs[0] != nullptr && taskData->outputs[0] != nullptr &&
+         taskData->outputs_count[1] == taskData->inputs_count[1] && taskData->outputs_count[0] >= 3 &&
+         taskData->outputs_count[1] >= 3;
+}
+\end{lstlisting}
+\par Отличие в TBB реализации
+\begin{lstlisting}
+bool GaussFilter::run() {
+  internal_order_test();
+
+  tbb::parallel_for(1, x - 1, [&](int i) {
+    for (int j = 1; j < y - 1; ++j) {
+      int sum = 0;
+      for (int ki = -1; ki <= 1; ++ki) {
+        for (int kj = -1; kj <= 1; ++kj) {
+          sum += *getImgId(ki + i, kj + j) * kernel[ki + 1][kj + 1];
+        }
+      }
+      *getResId(i, j) = (int)(sum / 16);
+    }
+  });
+  return true;
+}
+\end{lstlisting}
+\par Отличие в STL реализации
+\begin{lstlisting}
+void GaussFilter::applyFilter(int startRow, int endRow) {
+  for (int i = startRow; i < endRow; ++i) {
+    for (int j = 1; j < y - 1; ++j) {
+      int sum = 0;
+      for (int ki = -1; ki <= 1; ++ki) {
+        for (int kj = -1; kj <= 1; ++kj) {
+          sum += *getImgId(ki + i, kj + j) * kernel[ki + 1][kj + 1];
+        }
+      }
+      *getResId(i, j) = (int)(sum / 16);
+    }
+  }
+}
+
+bool GaussFilter::run() {
+  internal_order_test();
+
+  const int numThreads = std::thread::hardware_concurrency();
+  std::vector<std::thread> threads;
+  int chunkSize = (x - 2) / numThreads;
+
+  for (int i = 0; i < numThreads; ++i) {
+    int startRow = 1 + i * chunkSize;
+    int endRow = (i == numThreads - 1) ? x - 1 : startRow + chunkSize;
+    threads.emplace_back(&GaussFilter::applyFilter, this, startRow, endRow);
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
+
+  return true;
+}
+\end{lstlisting}
+
+
+\end{document}
