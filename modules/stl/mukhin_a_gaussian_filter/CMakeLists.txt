@@ -15,12 +15,12 @@ if (USE_LATEX)
     endforeach ()
 
     add_custom_target( ${ProjectId}_prebuild
-            COMMAND ${PDFLATEX_COMPILER} -draftmode -interaction=nonstopmode ${report_files}
+            COMMAND ${PDFLATEX_COMPILER} -draftmode -interaction=nonstopmode -shell-escape ${report_files}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             DEPENDS ${report_files})
 
     add_custom_target( ${ProjectId}_pdf
-            COMMAND ${PDFLATEX_COMPILER} ${report_files}
+            COMMAND ${PDFLATEX_COMPILER} -shell-escape ${report_files}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             DEPENDS  ${report_files})
 
