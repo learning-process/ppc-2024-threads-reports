@@ -1,0 +1,650 @@
+\documentclass{report}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{tempora}
+\usepackage[12pt]{extsizes}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{soul}
+
+\sethlcolor{gray}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=2.5cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\usepackage{listings}
+\lstset{language=C++,
+        basicstyle=\footnotesize,
+		keywordstyle=\color{blue}\ttfamily,
+		stringstyle=\color{red}\ttfamily,
+		commentstyle=\color{green}\ttfamily,
+		morecomment=[l][\color{red}]{\#}, 
+		tabsize=4,
+		breaklines=true,
+  		breakatwhitespace=true,
+  		title=\lstname,       
+}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+Министерство науки и высшего образования Российской Федерации
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего образования \\
+Национальный исследовательский Нижегородский государственный университет \newline им. Н.И. Лобачевского
+\end{center}
+
+\begin{center}
+Институт информационных технологий, математики и механики \\
+Кафедра математического обеспечения и суперкомпьютерных технологий \\
+Направление подготовки: Программная инженерия
+\end{center}
+
+\begin{center}
+\textbf{Отчет по курсу \\
+\vspace{0.5em}
+<<Параллельное программирование для систем с общей памятью>>} \\
+\end{center}
+
+\vspace{4em}
+
+\begin{center}
+\textbf{\LargeТема \\
+\vspace{0.5em}
+<<Повышение контраста полутонового изображения посредством линейной растяжки гистограммы.>>} \\
+\end{center}
+
+\vspace{4em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студент группы 3821Б1ПР1\\Афанасьев А. А.\\
+\\
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:}\\ аспирант\\Нестеров А. Ю.\\
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+% Введение
+\section*{Введение}
+\addcontentsline{toc}{section}{Введение}
+\par В современном мире обработки изображений особое значение приобретает эффективное использование параллельных вычислений для решения сложных задач, таких как повышение контраста для улучшения качества изображения. Одним из методов повышения контраста является линейная растяжка гистограммы. Этот метод позволяет улучшить визуальное восприятие изображения путем расширения диапазона яркости. В результате применения этой техники, изображение становится более четким и выразительным.
+
+\par Целью данной работы является разработка и исследование эффективности параллельных алгоритмов повышения контраста полутонового изображения посредством линейной растяжки гистограммы на системах с общей памятью.
+
+\newpage
+
+% Постановка задачи
+\section*{Постановка задачи}
+\addcontentsline{toc}{section}{Постановка задачи}
+\par \textbf{В рамках данного задания необходимо выполнить следующие задачи:}
+\begin{enumerate}
+    \item Реализовать четыре версии алгоритма повышения контраста полутонового изображения посредством линейной растяжки гистограммы:
+    \begin{itemize}
+    \item Последовательная реализация
+    \item Параллельная реализация с использованием технологий OpenMP
+    \item Параллельная реализация с использованием технологий TBB
+    \item Параллельная реализация с использованием технологий STD cpp
+    \end{itemize}
+    \item Сравнить реализациии и производительность версий.
+    \item Провести анализ полученных данных.
+\end{enumerate}
+\newpage
+
+% Описание алгоритма
+\section*{Описание алгоритма}
+\addcontentsline{toc}{section}{Описание алгоритма}
+\par Метод повышения контрастности изображений - это процесс, направленный на улучшение визуального восприятия изображений путем расширения диапазона интенсивностей пикселей. Данный метод включает определение минимального и максимального значений интенсивности пикселей в изображении и линейное растяжение контраста.
+
+\par \textbf{Алгоритм:}
+
+\begin{enumerate}
+\item Генерация случайных пикселей или Считываение пикселей изображения. Для генерации создается вектор пикселей заданного размера, каждый пиксель которого имеет случайное значение интенсивности в диапазоне от 0 до 255.
+\item Определение минимального и максимального значения интенсивности пикселей в исходном изображении.
+\item Если все пиксели имеют одинаковое значение, алгоритм завершает выполнение, так как дальнейшее улучшение контраста невозможно.
+\item Для каждого пикселя входного изображения выполняется линейное растяжение контраста по формуле:
+\[ \text{output\_pixel} = \frac{(\text{input\_pixel} - \text{min\_pixel}) \times 255}{\text{max\_pixel} - \text{min\_pixel}} \]
+\end{enumerate}
+
+\newpage
+
+% Описание схемы распараллеливания
+\section* {Описание схемы распараллеливания}
+\addcontentsline{toc}{section}{Описание схемы распараллеливания}
+\par \textbf{Алгоритм повышения контрастности изображений был распараллелен следующим образом:}
+\begin{enumerate}
+\item Линейное растяжение контраста
+\end{enumerate}
+\vspace{1em}
+\par \textbf{В процессе линейного растяжения контраста было распараллелено:}
+\begin{enumerate}
+\item Вычисление выходных значений пикселей на основе минимального и максимального значений интенсивности
+\end{enumerate}
+
+\newpage
+
+% Описание OpenMP, TBB, STL версий
+\section* {Описание OpenMP, TBB и STL версий}
+\par В различных версиях алгоритма, использующего параллельные вычисления, основные участки кода, подлежащие распараллеливанию, остаются неизменными. Однако ключевое различие между версиями, такими как OpenMP, TBB (Threading Building Blocks) и STL (Standard Template Library), заключается в предоставляемых ими возможностях и методах распараллеливания.
+\par \textbf{Версии реализации:}
+\begin{enumerate}
+    \item В OpenMP были использованы директивы:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[1.1] \#pragma omp parallel for - для распараллеливания циклов
+    \end{enumerate}   
+    \item В TBB было использовано:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[2.1]  tbb::parallel\_for(tbb::blocked\_range<>(), [\&](const tbb::blocked\_range<>\& r) {}) -  для распараллеливания циклов
+    \end{enumerate} 
+    \item В STL было использовано:
+    \vspace{0.5em}
+    \begin{enumerate}
+        \item[3.1]  std::thread - для создания потоков с задачами
+        \item[3.2]  std::thread::join - для ожидания завершения выполнения всех потоков
+    \end{enumerate} 
+\end{enumerate}
+
+\newpage
+
+% Результаты экспериментов
+\section*{Результаты экспериментов}
+\addcontentsline{toc}{section}{Результаты экспериментов}
+\par Корректность алгоритма была проверена на изображениях разного размера, для которых было найдено точное решение в виде массива пикселей.
+\par Тест на производительность проводился на изображении, состоящем из 10 млн случайно сгенерированных пикселей
+\par Для проведения экспериментов по вычислению эффективности работы алгоритмов использовалось 4 потока
+\par В таблице приведены значения эксперимента
+\par \textbf{Результаты эксперимента:}
+\begin{center}
+\begin{tabular}{ ||c | c | c ||  }
+    \hline Версия алгоритма & pipeline (сек) & task (сек)\\ 
+    \hline Последовательная & 0.422 & 0.388 \\
+    \hline OpenMP & 0.242 & 0.206 \\
+    \hline TBB & 0.240 & 0.212 \\ 
+    \hline STL & 0.238 & 0.202 \\ 
+    \hline
+\end{tabular}\\[5mm]
+\end{center}
+
+\newpage
+
+% Анализ результатов
+\section*{Анализ результатов}
+\addcontentsline{toc}{section}{Анализ результатов}
+\par Посчитаем средние коэффициенты ускорения по формуле $ p_i = \frac{T_{si}}{T_{pi}} $, где $T_{si}$ - время последовательного алгоритма, а $T_{pi}$ время параллельного алгоритма для {i} версии, где $i = {1, ..., 4}$.
+\par Посчитаем эффективность по формуле $e_i = p_i / 4$, где $4$ - кол-во потоков, $i = {1, ..., 4}$ 
+\par Получаем следующие результаты:
+
+\begin{center}
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{pipeline}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+    Последовательная & 1 & 0.250 \\
+    OpenMP & 1.745 & 0.436 \\
+    TBB & 1.762 & 0.441 \\
+    STL & 1.778 & 0.444 \\
+\hline
+\end{tabular}
+
+\vspace{2em}
+
+\begin{tabular}{ ||c | c | c ||}
+ \hline
+ \multicolumn{3}{| c |}{task}\\
+ \hline
+ Версия & Ускорение & Эффективность\\
+ \hline
+    Последовательная & 1 & 0.250 \\
+    OpenMP & 1.881 & 0.470 \\
+    TBB & 1.8289 & 0.457 \\
+    ST & 1.917 & 0.479 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Вывод}: 
+    \begin{itemize}
+        \item Лучший результат показал алгоритм с распараллеливанием STL, а TBB - худший
+        \item Распараллеливание ускорило выполнение алгоритма примерно в 1,8 раза
+    \end{itemize}
+
+\newpage
+
+% Заключение
+\section*{Заключение}
+\addcontentsline{toc}{section}{Заключение}
+Таким образом, в рамках данной лабораторной работы были реализованы последовательный и параллельные алгоритмы повышения контраста полутонового изображения посредством линейной растяжки гистограммы. Проведенные замеры производительности доказали эффективность распараллеливания данного алгоритма.
+
+\newpage
+
+% Литература
+\section*{Литература}
+\addcontentsline{toc}{section}{Литература}
+\begin{enumerate}
+    \item Лекции Сысоева А.В. по курсу "Параллельное программирование для систем с общей памятью"
+    \item Лекции Лаборатории Компьютерной Графики ННГУ. Автор: Турлапов Вадим Евгеньевич
+проф. каф. МОСТ, ИТММ, ННГУ 
+\end{enumerate}
+
+
+\newpage
+
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
+
+\begin{lstlisting}[language=C++,caption=Последовательная версия]
+// Copyright 2024 Afanasyev Aleksey
+#include "seq/afanasyev_a_image_contrast_enhacement/include/image_contrast_enhacement_task.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <random>
+#include <vector>
+
+using namespace AfanasyevAlekseySeq;
+
+std::vector<Pixel> AfanasyevAlekseySeq::generateRandomPixels(std::size_t size) {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<> distribution(0, UINT8_MAX);
+  std::vector<Pixel> pixels(size);
+
+  for (std::size_t i = 0; i < size; i++) {
+    pixels.emplace_back(distribution(gen));
+  }
+
+  return pixels;
+}
+
+bool AfanasyevAlekseySeq::contrastEnhancementSeq(const std::vector<Pixel>& input_pixels,
+                                                 std::vector<Pixel>& output_pixels) {
+  Pixel min_pixel = *std::min_element(input_pixels.begin(), input_pixels.end());
+  Pixel max_pixel = *std::max_element(input_pixels.begin(), input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < input_pixels.size(); i++) {
+    output_pixels[i] = (input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::validation() {
+  internal_order_test();
+
+  this->_input_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->inputs[0]);
+  this->_output_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]);
+
+  if (this->_input_pixels.size() != this->_output_pixels.size()) {
+    return false;
+  }
+
+  if (this->_input_pixels.empty()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::pre_processing() {
+  internal_order_test();
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::run() {
+  internal_order_test();
+
+  return contrastEnhancementSeq(this->_input_pixels, this->_output_pixels);
+}
+
+bool ImageContrastEnhacementTask::post_processing() {
+  internal_order_test();
+
+  *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]) = this->_output_pixels;
+
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=OpenMP версия]
+// Copyright 2024 Afanasyev Aleksey
+#include "omp/afanasyev_a_image_contrast_enhacement/include/image_contrast_enhacement_task.hpp"
+
+#include <omp.h>
+
+#include <algorithm>
+#include <chrono>
+#include <random>
+#include <vector>
+
+using namespace AfanasyevAlekseyOmp;
+
+std::vector<Pixel> AfanasyevAlekseyOmp::generateRandomPixels(std::size_t size) {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<> distribution(0, UINT8_MAX);
+  std::vector<Pixel> pixels(size);
+
+  for (std::size_t i = 0; i < size; i++) {
+    pixels.emplace_back(distribution(gen));
+  }
+
+  return pixels;
+}
+
+bool AfanasyevAlekseyOmp::contrastEnhancementSeq(const std::vector<Pixel>& input_pixels,
+                                                 std::vector<Pixel>& output_pixels) {
+  Pixel min_pixel = *std::min_element(input_pixels.begin(), input_pixels.end());
+  Pixel max_pixel = *std::max_element(input_pixels.begin(), input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < input_pixels.size(); i++) {
+    output_pixels[i] = (input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::validation() {
+  internal_order_test();
+
+  this->_input_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->inputs[0]);
+  this->_output_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]);
+
+  if (this->_input_pixels.size() != this->_output_pixels.size()) {
+    return false;
+  }
+
+  if (this->_input_pixels.empty()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::pre_processing() {
+  internal_order_test();
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::run() {
+  internal_order_test();
+
+  Pixel min_pixel = *std::min_element(this->_input_pixels.begin(), this->_input_pixels.end());
+  Pixel max_pixel = *std::max_element(this->_input_pixels.begin(), this->_input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+#pragma omp parallel for
+  for (int i = 0; i < static_cast<int>(this->_input_pixels.size()); i++) {
+    this->_output_pixels[i] = (this->_input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::post_processing() {
+  internal_order_test();
+
+  *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]) = this->_output_pixels;
+
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=TBB версия]
+// Copyright 2024 Afanasyev Aleksey
+#include "tbb/afanasyev_a_image_contrast_enhacement/include/image_contrast_enhacement_task.hpp"
+
+#include <tbb/tbb.h>
+
+#include <algorithm>
+#include <chrono>
+#include <random>
+#include <vector>
+
+using namespace AfanasyevAlekseyTbb;
+
+std::vector<Pixel> AfanasyevAlekseyTbb::generateRandomPixels(std::size_t size) {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<> distribution(0, UINT8_MAX);
+  std::vector<Pixel> pixels(size);
+
+  for (std::size_t i = 0; i < size; i++) {
+    pixels.emplace_back(distribution(gen));
+  }
+
+  return pixels;
+}
+
+bool AfanasyevAlekseyTbb::contrastEnhancementSeq(const std::vector<Pixel>& input_pixels,
+                                                 std::vector<Pixel>& output_pixels) {
+  Pixel min_pixel = *std::min_element(input_pixels.begin(), input_pixels.end());
+  Pixel max_pixel = *std::max_element(input_pixels.begin(), input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < input_pixels.size(); i++) {
+    output_pixels[i] = (input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::validation() {
+  internal_order_test();
+
+  this->_input_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->inputs[0]);
+  this->_output_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]);
+
+  if (this->_input_pixels.size() != this->_output_pixels.size()) {
+    return false;
+  }
+
+  if (this->_input_pixels.empty()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::pre_processing() {
+  internal_order_test();
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::run() {
+  internal_order_test();
+
+  Pixel min_pixel = *std::min_element(this->_input_pixels.begin(), this->_input_pixels.end());
+  Pixel max_pixel = *std::max_element(this->_input_pixels.begin(), this->_input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  int size = static_cast<int>(this->_input_pixels.size());
+  tbb::parallel_for(0, size, [&](int i) {
+    this->_output_pixels[i] = (this->_input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  });
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::post_processing() {
+  internal_order_test();
+
+  *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]) = this->_output_pixels;
+
+  return true;
+}
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[language=C++,caption=STL версия]
+// Copyright 2024 Afanasyev Aleksey
+#include "stl/afanasyev_a_image_contrast_enhacement/include/image_contrast_enhacement_task.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <random>
+#include <thread>
+#include <vector>
+
+using namespace AfanasyevAlekseyStl;
+
+std::vector<Pixel> AfanasyevAlekseyStl::generateRandomPixels(std::size_t size) {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937 gen(seed);
+  std::uniform_int_distribution<> distribution(0, UINT8_MAX);
+  std::vector<Pixel> pixels(size);
+
+  for (std::size_t i = 0; i < size; i++) {
+    pixels.emplace_back(distribution(gen));
+  }
+
+  return pixels;
+}
+
+bool AfanasyevAlekseyStl::contrastEnhancementSeq(const std::vector<Pixel>& input_pixels,
+                                                 std::vector<Pixel>& output_pixels) {
+  Pixel min_pixel = *std::min_element(input_pixels.begin(), input_pixels.end());
+  Pixel max_pixel = *std::max_element(input_pixels.begin(), input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < input_pixels.size(); i++) {
+    output_pixels[i] = (input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::validation() {
+  internal_order_test();
+
+  this->_input_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->inputs[0]);
+  this->_output_pixels = *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]);
+
+  if (this->_input_pixels.size() != this->_output_pixels.size()) {
+    return false;
+  }
+
+  if (this->_input_pixels.empty()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::pre_processing() {
+  internal_order_test();
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::run() {
+  internal_order_test();
+
+  Pixel min_pixel = *std::min_element(this->_input_pixels.begin(), this->_input_pixels.end());
+  Pixel max_pixel = *std::max_element(this->_input_pixels.begin(), this->_input_pixels.end());
+
+  if (min_pixel == max_pixel) {
+    return false;
+  }
+
+  std::size_t num_threads = std::max(1u, std::thread::hardware_concurrency());
+  std::vector<std::thread> threads(num_threads);
+
+  auto handle_pixel = [&](std::size_t start_i, std::size_t end_i) {
+    for (std::size_t i = start_i; i < end_i; i++) {
+      this->_output_pixels[i] = (this->_input_pixels[i] - min_pixel) * 255 / (max_pixel - min_pixel);
+    }
+  };
+
+  for (std::size_t i = 0; i < threads.size(); i++) {
+    std::size_t start_i = i * this->_input_pixels.size() / threads.size();
+
+    std::size_t end_i;
+    if (i == threads.size() - 1) {
+      end_i = this->_input_pixels.size();
+    } else {
+      end_i = (i + 1) * this->_input_pixels.size() / threads.size();
+    }
+
+    threads[i] = std::thread(handle_pixel, start_i, end_i);
+  }
+
+  for (auto& thread : threads) {
+    thread.join();
+  }
+
+  return true;
+}
+
+bool ImageContrastEnhacementTask::post_processing() {
+  internal_order_test();
+
+  *reinterpret_cast<std::vector<Pixel>*>(this->taskData->outputs[0]) = this->_output_pixels;
+
+  return true;
+}
+\end{lstlisting}
+
+\end{document}
