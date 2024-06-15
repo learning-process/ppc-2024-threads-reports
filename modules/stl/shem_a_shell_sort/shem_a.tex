@@ -1,0 +1,402 @@
+\documentclass[]{article}
+
+\usepackage[warn]{mathtext}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{luainputenc}
+\usepackage[english, russian]{babel}
+\usepackage[pdfpagemode=UseNone,colorlinks,allcolors=black]{hyperref}
+\usepackage{breakurl}
+\usepackage[12pt]{extsizes}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+
+\geometry{a4paper,top=2cm,bottom=2cm,left=3cm,right=1.5cm}
+\setlength{\parskip}{0.5cm}
+\setlist{nolistsep, itemsep=0.3cm,parsep=0pt}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1.\hfil}
+\makeatother
+
+\usepackage{amsthm}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Примечание}
+
+\theoremstyle{definition}
+\newtheorem*{defi}{Определение}
+
+\usepackage{titlesec}
+\titlelabel{\thetitle.\quad}
+
+\newcommand{\term}[1]{$\mathtt{#1}$}
+\newcommand{\termn}[1]{\mathtt{#1}}
+
+\newcommand{\cpp}{\textit{}}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+\MakeUppercase{Министерство науки и высшего образования Российской~Федерации}
+\end{center}
+
+\begin{center}
+Федеральное государственное автономное образовательное учреждение высшего~образования \\
+\textbf{Национальный исследовательский Нижегородский государственный университет им.~Н.И. Лобачевского}
+\end{center}
+
+\begin{center}
+\textbf{Институт информационных технологий, математики и механики}
+\end{center}
+\begin{center}
+\textbf{Кафедра математического обеспечения и суперкомпьютерных технологий}
+\end{center}
+\begin{center}
+Направление подготовки: <<Прикладная математика и информатика>>
+\end{center}
+
+\vspace{3em}
+
+\begin{center}
+\textbf{\Large\MakeUppercase{Отчёт по лабораторной работе}} \\
+\end{center}
+\begin{center}
+\textbf{\Large<<Сортировка Шелла с простым слиянием>>} \\
+\end{center}
+
+\vspace{5em}
+
+\newbox{\lbox}
+\savebox{\lbox}{\hbox{text}}
+\newlength{\maxl}
+\setlength{\maxl}{\wd\lbox}
+\hfill\parbox{7cm}{
+\hspace*{5cm}\hspace*{-5cm}\textbf{Выполнил:} \\ студентка группы 	3821Б1ПМоп3 \\ Шемякина А. П.\\
+\\
+
+\hspace*{5cm}\hspace*{-5cm}\textbf{Проверил:} \\ Нестеров А. Ю.
+}
+\vspace{\fill}
+
+\begin{center} Нижний Новгород \\ 2024 \end{center}
+
+\end{titlepage}
+
+\setcounter{page}{2}
+
+% Содержание
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+\par Алгоритмы сортировки — это алгоритмы, которые упорядочивают данные в определенном порядке. Они используются во многих задачах, таких как: сортировка элементов в списке и строк в текстовом файле, сортировка чисел в массиве и результатов поиска. Они позволяют оптимизировать процессы работы с данными, сокращая временные затраты и упрощая структурирование информации и являются неотъемлемой частью таких базовых операций, как поиск, фильтрация, агрегация и анализ данных.
+
+\par Сортировка Шелла - это модифицированная сортировка простыми вставками. Она включает в себя сортировку вставкой подгрупп элементов, но только в подгруппе они идут не в ряд, а равномерно выбираются с некоторой дельтой по индексу. После первоначальных грубых проходов, дельта методично уменьшается, пока расстояние между элементами этих несвязных подмножеств не достигнет единицы. Благодаря первоначальным проходам с большим шагом, большинство малых по значению элементов перебрасываются в левую часть массива, большинство крупных элементов массива попадают в правую.
+
+\par Постановка задачи:
+\par В данной лабораторной работе необходимо рассмотреть и реализовать алгоритм сортировки Шелла в трёх вариантах:
+
+\par 1) Последовательная версия — классическая реализация алгоритма без использования параллелизма;
+\par 2) Параллельная версия на OpenMP — версия алгоритма с использованием директив OpenMP и простым слиянием для распараллеливания вычислений;
+\par 3) Параллельная версия на TBB — реализация алгоритма с использованием библиотеки Threading Building Blocks и простым слиянием для распараллеливания вычислений.
+
+\par В рамках данной работы необходимо выполнить следующие задачи:
+\begin{enumerate}
+    \item Реализовать, исследовать и сравнить производительность трёх реализаций алгоритма сортировки Шелла с использованием языка программирования C++;
+    \item Добавить параллельную реализацию метода на языке программирования C++ с использованием разных технологий написания параллельных программ для с общей памятью: OpenMP, TBB;
+    \item Сравнить результаты и время работы разных реализаций алгоритма на различных объёмах данных, чтобы сделать выводы об эффективности параллелизации алгоритма Шелла при использовании OpenMP и TBB.
+\end{enumerate}
+
+\newpage
+\section{Алгоритмы, используемые для решения поставленной задачи}
+\subsection{Анализ алгоритма сортировки Шелла}
+
+\par 1) Временная сложность. Средняя и худшая временная сложность сортировки Шелла зависит от выбора последовательности шагов. В классическом варианте, когда шаги выбираются как \term{\frac{n}{2^k}}, средняя сложность составляет \term{O(n \log^2 n)}. Однако с оптимальными последовательностями шагов, такими как последовательность Хиббарда, можно достичь времени \term{O(n^{3/2})} или даже лучше.
+\par 2) Пространственная сложность. Алгоритм требует \term{O(1)} дополнительной памяти, так как является сортировкой на месте.
+\par 3) Устойчивость. Сортировка Шелла не является устойчивой, так как элементы, равные по значению, могут меняться местами в процессе сортировки.
+\par 4) Адаптивность. Сортировка Шелла хорошо адаптируется к частично отсортированным массивам, быстро уменьшая количество инверсий.
+
+\par Сортировка Шелла подходит для средних по размеру массивов и в ситуациях, когда доступ к элементам массива происходит не последовательно, а с пропусками, что делает её особенно полезной в некоторых специфических задачах.
+
+\subsection{Простое слияние}
+
+\par Простое слияние  — это базовый алгоритм слияния двух отсортированных массивов в один отсортированный массив. Этот процесс является фундаментальной операцией в многих алгоритмах сортировки, наиболее известным из которых является сортировка слиянием Главное преимущество сортировки слиянием — она работает всегда с одной и той же скоростью на любых массивах.
+
+\par Описание алгоритма простого слияния:
+
+\par Пусть есть два отсортированных массива \term{A} и \term{B}. С помощью простого слияния объединим эти массивы в один отсортированный массив \term{C}. Процесс простого слияния включает следующие шаги:
+
+\begin{enumerate}
+    \item Инициализация указателей. Создаются два указателя \term{i} и \term{j}, которые изначально указывают на первые элементы массивов \term{A} и \term{B} соответственно. Также создается указатель \term{k}, указывающий на текущую позицию в результирующем массиве \term{C};
+    \item Сравнение элементов. Сравниваются элементы \term{A[i]} и \term{A[j]}. Меньший из двух элементов копируется в \term{C[k]}, после чего указатель на этот элемент и указатель \term{k} инкрементируются (увеличиваются на 1). Если \term{A[i] \leq B[j]}, то \term{C[k] = A[i]} и \term{i} инкрементируется; иначе \term{C[k] = B[j]} и \term{j} инкрементируется;
+    \item Обработка оставшихся элементов. Когда один из массивов полностью скопирован в \term{C}, оставшиеся элементы другого массива копируются в \term{C}. Если \term{i} еще не достигло конца \term{A}, оставшиеся элементы \term{A[i], A[i+1], \ldots} копируются в \term{C}. Аналогично, если \term{j} еще не достигло конца \term{B}, оставшиеся элементы \term{B[j], B[j+1], \ldots} копируются;
+    \item Результат. В конце алгоритма \term{C} содержит все элементы из \term{A} и \term{B}, упорядоченные по возрастанию.
+\end{enumerate}
+
+\subsection{Распараллеливание}
+
+\par Принцип распараллеливания в данной работе заключается в разделении исходного массива на несколько частей, сортировке каждой части в отдельном потоке и последующем объединении отсортированных частей:
+\par 1) Массив разбивается на части равного размера;
+\par 2) Последняя часть получает дополнительные элементы из остатка;
+\par 3) Каждая часть массива сортируется в отдельном потоке;
+\par 4) После завершения параллельной сортировки каждой части исходного массива, они объединяются в один отсортированный массив с помощью простого слияния.
+
+\newpage
+
+\section{Программная реализация основных алгоритмов}
+
+\subsection{Последовательная реализация}
+
+\par Функция последовательной реализации имеет вид: \cpp{void ShellTaskOMP::ShellSort(std::vector<int>\& vec)}. Входные данные в функцию: \cpp{std::vector<int>\& vec} -- вектор целых чисел, который нужно отсортировать.
+\par Сначала первый интервал (\cpp{interval}) устанавливается как половина размера вектора \cpp{vec}. Далее он постепенно уменьшается вдвое на каждой итерации внешнего цикла, пока не станет равным нулю.
+\par Для каждого значения \cpp{interval} выполняется внутренняя сортировка вставками, которая сравнивает элементы с шагом \cpp{interval}, а внутренний цикл сортировки вставками перемещает элементы на позиции, упорядоченные с учетом текущего интервала.
+
+
+\subsection{Реализация простого слияния}
+
+\begin{lstlisting}[language=C++]
+std::vector<int> ShellTaskOMP::merge(const std::vector<std::vector<int>>& chunks)
+\end{lstlisting}
+
+\par Входные данные: \cpp{const std::vector<std::vector<int>>\& chunks} -- вектор, содержащий несколько отсортированных векторов, которые нужно будет объединить.
+
+\par Выходные данные: \cpp{std::vector<int> res} -- отсортированный массив, полученный путем объединения всех векторов.
+
+
+\subsection{Реализация OpenMP}
+
+\par Параллельная сортировка векторов реализуется с использованием директивы OpenMP \cpp{\#pragma omp parallel for} для параллельного выполнения цикла. Каждый поток сортирует свой вектор с помощью последовательной сортировки Шелла.
+\par Синхронизация реализуется с помощью барьер синхронизации \cpp{\#pragma omp barrier}, чтобы убедиться, что все потоки завершили сортировку своих векторов.
+\par  Объединяем отсортированные векторы с помощью функции слияния \cpp{merge}
+
+
+\subsection{Реализация TBB}
+
+\par Используем \cpp{tbb::parallel\_for} для параллельного выполнения цикла. Каждый поток сортирует свой вектор с помощью последовательной сортировки Шелла (\cpp{shell\_sort}).
+\par В TBB не требуется явная синхронизация барьером, так как \cpp{tbb::parallel\_for} обеспечивает автоматическую синхронизацию.
+\par Объединяем отсортированные векторы с помощью функции слияния \cpp{merge}.
+
+
+\section{Исследование и анализ}
+
+\subsection{Подтверждение корректности}
+
+\par Для подтверждения корректности работы программы были написаны тесты с использованием Google Test: созданы по 5 тестов проверки функциональности для каждой реализации. Также тесты на замер времени работы всего пайплайна и работы задачи.
+
+\subsection{Результаты экспериментов}
+
+\par Для проведения экспериментов по вычислению эффективности работы разных реализаций программы использовалась система со следующей конфигурацией:
+
+\begin{itemize}
+    \item Процессор: AMD Ryzen 5 5625U with Radeon Graphics 2.30 GHz 6 ядер 12 потоков
+    \item Оперативная память: 16.00 ГБ
+    \item ОС: Windows 11 Домашняя
+\end{itemize}
+
+\par В качестве тестовых данных использовались рандомные массивы различных размеров, сгенерированные специальной функцией:
+\begin{lstlisting}[language=C++]
+std::vector<int> ShellTaskSequential::give_random_vector(int size, int min, int max);
+\end{lstlisting}
+
+\par Для проверки корректности работы сортировки использовалась функция:
+
+\begin{lstlisting}[language=C++]
+bool ShellTaskSequential::CheckSort(std::vector<int> input);
+\end{lstlisting}
+ -- проверяет упорядоченность элементов в массиве.
+\par Для функциональных тестов использовались случайные массивы размерами от 10 до 100. Функциональные тесты для всех реализаций успешно прошли проверку.
+
+\par Для тестов производительности пайплайна использовались массивы размером $2 \cdot 10^6$. Для тестов производительности задачи использовались массивы размером $8 \cdot 10^6$. В результате работы тестов были получены следующие результаты:
+
+\begin{table}[h!]
+    \begin{center}
+        \begin{tabular}{ |c|c|c|c| } 
+        \hline
+        Версия программы & Общ. время, с. & Сравнение с послед. & Эффективность  \\
+        \hline
+        Последовательная & 5,5249009 & 1 & 0,25 \\
+        OpenMP & 2,4433778 & 2,4151213 & 0,293392243 \\
+        TBB & 2,56223 & 2,187295179 & 0,270326897 \\
+        \hline
+        \end{tabular}
+    \end{center}
+    \caption{Тесты pipeline}
+\end{table}
+
+\begin{table}[h]
+    \begin{center}
+        \begin{tabular}{ |c|c|c|c| } 
+        \hline
+        Версия программы & Общ. время, с. & Сравнение с послед. & Эффективность  \\
+        \hline
+        Последовательная & 1,7987948 & 1 & 0,25 \\
+        OpenMP & 1,3814713 & 1,3379727 & 0,155746617 \\
+        TBB & 1,1305301 & 1,602312177 & 0,198038286 \\
+        \hline
+        \end{tabular}
+    \end{center}
+    \caption{Тесты task run}
+\end{table}
+
+\subsection{Выводы}
+
+\par Работу всей программы удалось ускорить более чем в 2 раза;
+\par Версия с OpenMP работает немного быстрее, чем версия с TBB;
+\par Однако задача работает быстрее на TBB.
+
+\par Отсюда можно сделать вывод, что параллелизация алгоритма сортировки Шелла с простым слиянием работает эффективно.
+
+\newpage
+
+\section{Заключение}
+
+\par В результате данной работы удалось изучить алгоритмы сортировки Шелла и простого слияния. Были реализованы как последовательный вариант сортировки, так и параллельный с помощью технологий OpenMP и TBB. Параллельная реализация продемонстрировала свою эффективность. 
+
+\newpage
+
+\section{Литература}
+\begin{enumerate}
+\item Сортировка Шелла :: Shell sort - Электронный ресурс. URL: \newline \url{http://algolab.valemak.com/shell}
+\item Habr - Электронный ресурс. URL: \newline \url{https://habr.com/ru/post/479202/}
+\item Educative - Электронный ресурс. URL: \newline \url{https://www.educative.io/blog/modern-multithreading-and-concurrency-in-cpp}
+\item А.В. Сысоев, И.Б. Мееров, А.А. Сиднев «Средства разработки параллельных программ для систем с общей памятью. Библиотека Intel Threading Building Blocks». Нижний Новгород, 2007, 128 с. 
+\item А.В. Сысоев, И.Б. Мееров, А.Н. Свистунов, А.Л. Курылев, А.В. Сенин, А.В. Шишков, К.В. Корняков, А.А. Сиднев «Параллельное программирование в системах с общей
+памятью. Инструментальная поддержка». Нижний Новгород, 2007, 110 с. 
+\end{enumerate}
+
+\newpage
+
+\section{Приложение}
+
+\begin{lstlisting}[language=C++]
+std::vector<int> ShellTaskSequential::ShellSort(const std::vector<int>& input) {
+  std::vector<int> vec(input);
+
+  for (int interval = static_cast<int>(vec.size()) / 2; interval > 0; interval /= 2) {
+    for (int i = interval; i < static_cast<int>(vec.size()); i++) {
+      int tmp = vec[i];
+      int j = i;
+      for (; j >= interval && vec[j - interval] > tmp; j -= interval) {
+        vec[j] = vec[j - interval];
+      }
+      vec[j] = tmp;
+    }
+  }
+
+  return vec;
+}
+
+bool ShellTaskSequential::CheckSort(std::vector<int> input) { return std::is_sorted(input.begin(), input.end()); }
+
+std::vector<int> ShellSequential::generate_random_vector(int size, int min, int max) {
+  std::random_device rnd_device;
+  std::mt19937 mersenne_engine{rnd_device()};
+  std::uniform_int_distribution<int> dist{min, max};
+
+  auto gen = [&dist, &mersenne_engine]() { return dist(mersenne_engine); };
+
+  std::vector<int> vec(size);
+  generate(begin(vec), end(vec), gen);
+
+  return vec;
+}
+
+std::vector<int> ShellTaskOMP::merge(const std::vector<std::vector<int>>& chunks) {
+  std::vector<int> res;
+
+  // Merge the sorted chunks
+  for (const auto& chunk : chunks) {
+    // Merge the current chunk with the result vector
+    std::vector<int> merged;
+    merged.reserve(res.size() + chunk.size());
+    auto resIter = res.begin();
+    auto chunkIter = chunk.begin();
+
+    while (resIter != res.end() && chunkIter != chunk.end()) {
+      if (*resIter < *chunkIter) {
+        merged.push_back(*resIter);
+        ++resIter;
+      } else {
+        merged.push_back(*chunkIter);
+        ++chunkIter;
+      }
+    }
+
+    // Copy remaining elements from result vector
+    while (resIter != res.end()) {
+      merged.push_back(*resIter);
+      ++resIter;
+    }
+
+    // Copy remaining elements from current chunk
+    while (chunkIter != chunk.end()) {
+      merged.push_back(*chunkIter);
+      ++chunkIter;
+    }
+
+    // Update result vector with merged vector
+    res = std::move(merged);
+  }
+
+  return res;
+}
+
+void ShellTaskOMP::ShellSort_Parallel(std::vector<int>& input) {
+  int numProcs = omp_get_num_procs();
+  int size = static_cast<int>(input.size());
+  int chunkSize = size / numProcs;
+  int remainder = size % numProcs;
+
+  std::vector<std::vector<int>> chunks(numProcs);
+
+#pragma omp parallel for
+  for (int i = 0; i < numProcs; ++i) {
+    int startIdx = i * chunkSize;
+    int endIdx = startIdx + chunkSize;
+    if (i == numProcs - 1) {
+      endIdx += remainder;  // Add remaining elements to the last chunk
+    }
+    chunks[i].assign(input.begin() + startIdx, input.begin() + endIdx);
+    shell_sort(chunks[i]);
+  }
+
+#pragma omp barrier
+
+  input = merge(chunks);
+}
+
+void ShellTaskTBB::ShellSort_Parallel(std::vector<int>& input) {
+  int numProcs = 4;
+  int size = static_cast<int>(input.size());
+  int chunkSize = size / numProcs;
+  int remainder = size % numProcs;
+
+  std::vector<std::vector<int>> chunks(numProcs);
+
+  tbb::parallel_for(0, numProcs, [&](int i) {
+    int startIdx = i * chunkSize;
+    int endIdx = startIdx + chunkSize;
+    if (i == numProcs - 1) {
+      endIdx += remainder;  // Add remaining elements to the last chunk
+    }
+    chunks[i].assign(input.begin() + startIdx, input.begin() + endIdx);
+    shell_sort(chunks[i]);
+  });
+
+  // Barrier is not needed in TBB
+
+  input = merge(chunks);
+}
+\end{lstlisting}
+
+\end{document}
